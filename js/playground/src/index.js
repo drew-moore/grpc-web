@@ -1,10 +1,10 @@
 import * as grpc from './grpc-polyfill';
-import { TestServiceService } from './proto/test_grpc_pb.js';
+import { TestServiceService } from './_proto/mwitkow/grpcweb/test/test_grpc_pb';
 
 const container = document.getElementById("container");
 
 // Constructing the request
-const req = new proto.mwitkow.testproto.PingRequest();
+const req = new proto.mwitkow.grpcweb.test.PingRequest();
 req.setValue('hello');
 req.setErrorCodeReturned(2);
 
@@ -14,7 +14,7 @@ const TestServiceClient = grpc.makeGenericClientConstructor(TestServiceService);
 const client = new TestServiceClient('https://localhost:9090');
 client.ping(req, {
   onMessage: function(message) {
-    // console.log("ping.onMessage", message);
+    console.log("ping.onMessage", message);
   },
   onError: function(err) {
     console.log("ping.onError", err);
@@ -44,7 +44,6 @@ client.ping(req, {
       onComplete: function(resp) {
         console.log("pingError complete", resp);
 
-
         // Make a server-streaming request
         client.pingList(req, {
           onMessage: function (message) {
@@ -61,6 +60,7 @@ client.ping(req, {
             console.log("pingList complete", resp);
           }
         });
-      };
-  });
+      }
+    });
+  }
 });

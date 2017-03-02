@@ -23,9 +23,9 @@ function makeRpc(name, serviceDescriptor, props) {
   return function (req, { onMessage, onError, onHeaders, onComplete }) {
     const {requestSerialize, responseDeserialize} = serviceDescriptor;
 
-    let lastTerminator;
-    let lastError;
     const allMessages = [];
+
+    console.log("chunkedRequest",chunkedRequest);
 
     // initiate the request.
     chunkedRequest({
@@ -42,6 +42,7 @@ function makeRpc(name, serviceDescriptor, props) {
         onHeaders(headers);
       },
       onChunk: function (err, data) {
+        console.log("onChunk",err,data);
         const messages = data
           .filter(d => d.type === 'message')
           .map(d => responseDeserialize(d.data));
@@ -59,6 +60,7 @@ function makeRpc(name, serviceDescriptor, props) {
         }
       },
       onComplete: function (resp) {
+        // If this is called before the terminator is received then there was an error
         console.log("chunked-request.onComplete", arguments);
       }
     });

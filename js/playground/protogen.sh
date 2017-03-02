@@ -3,7 +3,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PROTOBUF_DIR=${PROTOBUF_DIR-${SCRIPT_DIR}/../../proto}
-PROTOGEN_DIR=_proto
+PROTOGEN_DIR=src/_proto
 GENERATION_DIR=${GENERATION_DIR-${SCRIPT_DIR}/${PROTOGEN_DIR}}
 
 # Builds all .proto files in a given package dirctory.
