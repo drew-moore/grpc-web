@@ -1,3 +1,4 @@
+const path = require('path');
 module.exports = {
     entry: "./src/index.js",
     devtool: 'inline-source-map',
@@ -9,5 +10,7 @@ module.exports = {
         loaders: [
             { test: /\.js$/, loader: "babel", exclude: /node_modules/ }
         ]
-    }
+    },
+    resolve: { fallback: path.join(__dirname, "node_modules") },
+    resolveLoader: { fallback: path.join(__dirname, "node_modules") }
 };

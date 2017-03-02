@@ -12,17 +12,19 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	testproto "github.com/mwitkow/grpc-browser-compat/cmd/testproto"
+	testproto "./testproto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
-	"github.com/mwitkow/grpc-browser-compat"
+	grpc_browser_compat "../"
 	"github.com/rs/cors"
+	"crypto/tls"
 )
 
 var (
 	useTls          = flag.Bool("tls", true, "Whether to use TLS and HTTP2.")
 	tlsCertFilePath = flag.String("tls_cert_file", "../misc/localhost.crt", "Path to the CRT/PEM file.")
 	tlsKeyFilePath  = flag.String("tls_key_file", "../misc/localhost.key", "Path to the private key file.")
+	forceHttp1_1    = flag.Bool("force_http1_1", false, "Force usage of HTTP1.1.")
 )
 
 func main() {
@@ -54,6 +56,12 @@ func main() {
 	httpServer := http.Server{
 		//Handler: grpc_browser_compat.Middleware(grpcServer),
 		Handler: corsWrapper.Handler(http.HandlerFunc(handler)),
+	}
+	if *forceHttp1_1 {
+		httpServer.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
+		log.Printf("HTTP2 is disabled")
+	} else {
+		log.Printf("HTTP2 is enabled")
 	}
 	if !*useTls {
 		listener, err := net.Listen("tcp", ":9090")

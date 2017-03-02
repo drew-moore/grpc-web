@@ -12,15 +12,37 @@ const TestServiceClient = grpc.makeGenericClientConstructor(TestServiceService);
 
 // Make a unary request
 const client = new TestServiceClient('https://localhost:9090');
-client.ping(req, function(err, resp) {
-  console.log("ping complete");
-  console.dir(err);
-  console.dir(resp);
+client.ping(req, {
+  onMessage: function(message) {
+    // console.log("ping.onMessage", message);
+  },
+  onError: function(err) {
+    console.log("ping.onError", err);
+  },
+  onHeaders: function(headers, status) {
+    console.log("ping onHeaders", headers, status);
+    headers.forEach((header, value) => {
+      console.log("header",header, value);
+    });
+  },
+  onComplete: function(resp) {
+    console.log("ping complete", resp);
 
-  // Make a server-streaming request
-  client.pingList(req, function(err, resp) {
-    console.log("pingList complete");
-    console.dir(err);
-    console.dir(resp);
-  });
+    // Make a server-streaming request
+    client.pingList(req, {
+      onMessage: function(message) {
+        // console.log("pingList.onMessage", message);
+      },
+      onError: function(err) {
+        console.log("pingList.onError", err);
+      },
+      onHeaders: function(headers) {
+        console.log("pingList onHeaders", headers);
+        console.log("pingList.headers", headers.entries());
+      },
+      onComplete: function(resp) {
+        console.log("pingList complete", resp);
+      }
+    });
+  }
 });
