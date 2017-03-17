@@ -2,13 +2,19 @@ syntax = "proto3";
 
 package mwitkow.grpcweb.test;
 
-message Empty {
-}
+import "google/protobuf/empty.proto";
 
 message PingRequest {
+  enum FailureType {
+    NONE = 0;
+    CODE = 1;
+    DROP = 2;
+  }
+  
   string value = 1;
   int32 sleep_time_ms = 2;
   uint32 error_code_returned = 3;
+  FailureType failure_type = 4;
 }
 
 message PingResponse {
@@ -17,11 +23,15 @@ message PingResponse {
 }
 
 service TestService {
-  rpc PingEmpty(Empty) returns (PingResponse) {}
+  rpc PingEmpty(google.protobuf.Empty) returns (PingResponse) {}
 
   rpc Ping(PingRequest) returns (PingResponse) {}
 
-  rpc PingError(PingRequest) returns (Empty) {}
+  rpc PingError(PingRequest) returns (google.protobuf.Empty) {}
 
   rpc PingList(PingRequest) returns (stream PingResponse) {}
+}
+
+service FailService {
+  rpc NonExistant(PingRequest) returns (PingResponse) {}
 }

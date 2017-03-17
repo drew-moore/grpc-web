@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	testproto "github.com/improbable-eng/grpc-web/go/_proto/mwitkow/grpcweb/test"
+	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/rs/cors"
 	"google.golang.org/grpc/metadata"
@@ -71,7 +72,7 @@ func main() {
 type demoSrv struct {
 }
 
-func (s *demoSrv) PingEmpty(ctx context.Context, _ *testproto.Empty) (*testproto.PingResponse, error) {
+func (s *demoSrv) PingEmpty(ctx context.Context, _ *google_protobuf.Empty) (*testproto.PingResponse, error) {
 	grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "Value1", "HeaderTestKey2", "Value2"))
 	grpclog.Printf("demoSrv.PingEmpty invoked")
 	grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "Value1", "TrailerTestKey2", "Value2"))
@@ -85,7 +86,7 @@ func (s *demoSrv) Ping(ctx context.Context, ping *testproto.PingRequest) (*testp
 	return &testproto.PingResponse{Value: ping.Value}, nil
 }
 
-func (s *demoSrv) PingError(ctx context.Context, ping *testproto.PingRequest) (*testproto.Empty, error) {
+func (s *demoSrv) PingError(ctx context.Context, ping *testproto.PingRequest) (*google_protobuf.Empty, error) {
 	grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "Value1", "HeaderTestKey2", "Value2"))
 	grpclog.Printf("demoSrv.PingError invoked")
 	grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "Value1", "TrailerTestKey2", "Value2"))

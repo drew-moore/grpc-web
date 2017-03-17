@@ -13,17 +13,14 @@ function proto_build_dir {
   DIR_FULL=${1}
   DIR_REL=${1##${PROTOBUF_DIR}}
   DIR_REL=${DIR_REL#/}
-  echo -n "proto_build: $DIR_REL "
+  echo -n "proto_build_gen: $GENERATION_DIR "
   mkdir -p ${GENERATION_DIR}/${DIR_REL} 2> /dev/null
   protoc \
-    --plugin=protoc-gen-jsgrpc=${SCRIPT_DIR}/node_modules/grpc-tools/bin/grpc_node_plugin \
+    --plugin=protoc-gen-ts=/Users/marcus/workspace/protoc-gen-ts/bin/protoc-gen-ts \
     -I${PROTOBUF_DIR} \
     --js_out=import_style=commonjs,binary:${GENERATION_DIR} \
-    --jsgrpc_out=commonjs,binary:${GENERATION_DIR}\
+    --ts_out=${GENERATION_DIR} \
     ${DIR_FULL}/*.proto || exit $?
-  ## XXX: HACK, remove gRPC definitions so that browser stuff can include it.
-  # Nuke gRPC import
-  find ${GENERATION_DIR} -iname '*grpc_pb.js' -exec sed -i -e "/'grpc'/d" -e "/makeGenericClientConstructor/d" {} \; || exit $?
   echo "DONE"
 }
 
