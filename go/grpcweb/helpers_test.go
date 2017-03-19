@@ -5,7 +5,7 @@ package grpcweb_test
 
 import (
 	"testing"
-	testproto "github.com/improbable-eng/grpc-web/go/_proto/mwitkow/grpcweb/test"
+	testproto "github.com/improbable-eng/grpc-web/test/go/_proto/mwitkow/grpcweb/test"
 
 	"google.golang.org/grpc"
 	"github.com/stretchr/testify/assert"

@@ -35,7 +35,7 @@ import (
 
 	"github.com/mwitkow/go-conntrack/connhelpers"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	testproto "github.com/improbable-eng/grpc-web/go/_proto/mwitkow/grpcweb/test"
+	testproto "github.com/improbable-eng/grpc-web/test/go/_proto/mwitkow/grpcweb/test"
 )
 
 var (
