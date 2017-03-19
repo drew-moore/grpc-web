@@ -1,11 +1,7 @@
 import * as jspb from "google-protobuf";
-const chunkedRequest = require("chunked-request").default;
-import { BrowserHeaders } from "browser-headers";
-import {
-  ChunkParser,
-  Chunk,
-  ChunkType,
-} from "./ChunkParser";
+import {BrowserHeaders} from "browser-headers";
+import {ChunkParser, Chunk, ChunkType} from "./ChunkParser";
+import {Transport,DefaultTransportFactory} from "./transports/Transport";
 
 export {
   BrowserHeaders
@@ -13,7 +9,7 @@ export {
 
 export namespace grpc {
 
-  interface ProtobufMessageClass<T extends jspb.Message> {
+  export interface ProtobufMessageClass<T extends jspb.Message> {
     new(): T;
     deserializeBinary(bytes: Uint8Array): T;
   }
@@ -59,6 +55,7 @@ export namespace grpc {
     onMessage: (res: TResponse) => void,
     onComplete: (code: Code, message: string | undefined, trailers: BrowserHeaders) => void,
     onError: (err: Error) => void,
+    transport?: Transport,
     debug?: boolean,
   }
 
@@ -91,34 +88,47 @@ export namespace grpc {
   export function invoke<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M,
                                                                                                                                          props: RpcOptions<TRequest, TResponse>) {
     const requestHeaders = new BrowserHeaders(props.headers ? props.headers : {});
-    requestHeaders.append("content-type", "application/grpc-web");
+    requestHeaders.set("content-type", "application/grpc-web");
 
     const framedRequest = frameRequest(props.request);
 
     let responseHeaders: BrowserHeaders;
     let responseTrailers: BrowserHeaders;
 
-    chunkedRequest({
+    let transport = props.transport;
+    if (!transport) {
+      transport = DefaultTransportFactory.getTransport();
+    }
+
+    const parser = new ChunkParser();
+
+    transport({
       url: `${props.host}/${methodDescriptor.service.serviceName}/${methodDescriptor.methodName}`,
-      method: "POST",
       headers: requestHeaders,
       body: framedRequest,
-      chunkParser: ChunkParser,
-      onHeaders: function (headers: BrowserHeaders, status: number) {
+      credentials: "",
+      onHeaders: (headers: BrowserHeaders, status: number) => {
         responseHeaders = headers;
         props.debug && console.debug("onHeaders", headers, status);
-
         props.debug && console.debug("responseHeaders", JSON.stringify(responseHeaders, null, 2));
-
         if (props.onHeaders) {
           props.onHeaders(headers);
         }
       },
-      onChunk: function (err: Error, data: any) {
-        props.debug && console.debug("err", err, "data", data);
+      onChunk: (chunkBytes: Uint8Array) => {
+        props.debug && console.debug("onChunk: ", chunkBytes);
+
+        let data: Chunk[] = [];
+        try {
+          data = parser.parse(chunkBytes);
+          console.log("data", data);
+        } catch (e) {
+          console.error("parse error", e);
+          props.onError(e);
+        }
 
         data.forEach((d: Chunk) => {
-          props.debug && console.debug("onChunk", d);
+          props.debug && console.debug("onChunk ", d);
 
           if (d.chunkType === ChunkType.MESSAGE) {
             if (props.onMessage) {
@@ -129,8 +139,8 @@ export namespace grpc {
           }
         });
       },
-      onComplete: function () {
-        props.debug && console.debug("chunked-request.onComplete", arguments);
+      onComplete: () => {
+        props.debug && console.debug("grpc.onComplete");
 
         if (responseTrailers === undefined) {
           if (responseHeaders === undefined) {
@@ -140,7 +150,7 @@ export namespace grpc {
           }
 
           // This was a headers/trailers-only response
-          props.debug && console.debug("headers only response");
+          props.debug && console.debug("grpc.headers only response");
 
           const grpcStatus = getCodeFromTrailers(responseHeaders);
           if (grpcStatus === null) {

@@ -1,18 +1,10 @@
-import { BrowserHeaders } from "browser-headers";
-import { TextDecoder } from "text-encoding";
+import {BrowserHeaders} from "browser-headers";
+import {TextDecoder} from "text-encoding";
 
 const HEADER_SIZE = 5;
 
-export class TransportState {
-  buffer: ArrayBuffer;
-  position: number = 0;
-}
-
-function hasEnoughBytes(byteCount: number, state: TransportState) {
-  return state.buffer.byteLength - state.position >= byteCount
-}
-
 function isTrailerHeader(headerView: DataView) {
+  console.log("isTrailerHeader", headerView);
   // This is encoded in the MSB of the grpc header's first byte.
   return (headerView.getUint8(0) & 0x80) === 0x80
 }
@@ -25,21 +17,8 @@ function readLengthFromHeader(headerView: DataView) {
   return headerView.getUint32(1, false /* bigEndian */)
 }
 
-function addBufferToState(readBuffer: ArrayBuffer, state: TransportState) {
-  if (state.buffer == null) {
-    state.buffer = readBuffer;
-    state.position = 0;
-  } else if (state.position === state.buffer.byteLength) {
-    state.buffer = readBuffer;
-    state.position = 0;
-  } else {
-    const remaining = state.buffer.byteLength - state.position;
-    const newBuf = new Uint8Array(remaining + readBuffer.byteLength);
-    newBuf.set(new Uint8Array(state.buffer, state.position), 0);
-    newBuf.set(new Uint8Array(readBuffer), remaining);
-    state.buffer = newBuf.buffer;
-    state.position = 0;
-  }
+function hasEnoughBytes(buffer: ArrayBuffer, position: number, byteCount: number) {
+  return buffer.byteLength - position >= byteCount;
 }
 
 export enum ChunkType {
@@ -53,40 +32,58 @@ export type Chunk = {
   data?: Uint8Array,
 }
 
-export function ChunkParser(bytes: Uint8Array, state: TransportState = new TransportState(), flush: boolean): [Chunk[], TransportState] {
-  console.log("grpcChunkParser", bytes);
-  const chunkData: Chunk[] = [];
+export class ChunkParser{
+  buffer: ArrayBuffer | null = null;
+  position: number = 0;
 
-  console.log("flush", bytes.length, state);
-
-  if (bytes.length === 0 && flush) {
-    return [chunkData, state];
-  }
-
-  addBufferToState(bytes.buffer, state);
-
-  while (true) {
-    if (!hasEnoughBytes(HEADER_SIZE, state)) {
-      console.log("Not enough bytes");
-      return [chunkData, state];
+  parse(bytes: Uint8Array, flush?: boolean): Chunk[] {
+    console.log("ChunkParser.parse bytes:", bytes, "flush: ", flush);
+    console.log("ChunkParser.buffer", this.buffer);
+    if (bytes.length === 0 && flush) {
+      return [];
     }
 
-    let headerBuffer = state.buffer.slice(state.position, state.position + HEADER_SIZE);
-    const headerView = new DataView(headerBuffer);
-    const msgLength = readLengthFromHeader(headerView);
-    if (!hasEnoughBytes(HEADER_SIZE + msgLength, state)) {
-      return [chunkData, state]
-    }
+    const chunkData: Chunk[] = [];
 
-    const messageData = new Uint8Array(state.buffer, state.position + HEADER_SIZE, msgLength);
-    state.position += HEADER_SIZE + msgLength;
-
-    if (isTrailerHeader(headerView)) {
-      chunkData.push({chunkType: ChunkType.TRAILERS, trailers: parseTrailerData(messageData)});
-      // This must be the end of the chunk
-      return [chunkData, state]
+    if (this.buffer == null) {
+      this.buffer = bytes.buffer;
+      this.position = 0;
+    } else if (this.position === this.buffer.byteLength) {
+      this.buffer = bytes.buffer;
+      this.position = 0;
     } else {
-      chunkData.push({chunkType: ChunkType.MESSAGE, data: messageData})
+      const remaining = this.buffer.byteLength - this.position;
+      const newBuf = new Uint8Array(remaining + bytes.buffer.byteLength);
+      newBuf.set(new Uint8Array(this.buffer, this.position), 0);
+      newBuf.set(new Uint8Array(bytes.buffer), remaining);
+      this.buffer = newBuf.buffer;
+      this.position = 0;
+    }
+
+    while (true) {
+      if (!hasEnoughBytes(this.buffer, this.position, HEADER_SIZE)) {
+        console.log("Not enough bytes");
+        return chunkData;
+      }
+
+      let headerBuffer = this.buffer.slice(this.position, this.position + HEADER_SIZE);
+      const headerView = new DataView(headerBuffer);
+      const msgLength = readLengthFromHeader(headerView);
+      if (!hasEnoughBytes(this.buffer, this.position, HEADER_SIZE + msgLength)) {
+        return chunkData;
+      }
+
+      const messageData = new Uint8Array(this.buffer, this.position + HEADER_SIZE, msgLength);
+      this.position += HEADER_SIZE + msgLength;
+
+      if (isTrailerHeader(headerView)) {
+        chunkData.push({chunkType: ChunkType.TRAILERS, trailers: parseTrailerData(messageData)});
+        // This must be the end of the chunk
+        return chunkData;
+      } else {
+        chunkData.push({chunkType: ChunkType.MESSAGE, data: messageData})
+      }
     }
   }
 }
+

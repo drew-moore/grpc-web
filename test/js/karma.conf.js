@@ -1,6 +1,8 @@
 // Karma configuration
 // Generated on Wed Feb 17 2016 15:48:21 GMT+0000 (GMT)
 
+var fs = require("fs");
+
 module.exports = function(config) {
 
   // Browsers to run on Sauce Labs
@@ -113,6 +115,13 @@ module.exports = function(config) {
     // web server port
     port: 9876,
 
+    protocol: "https",
+
+    httpsServerOptions: {
+      key: fs.readFileSync('../../misc/localhost.key', 'utf8'),
+      cert: fs.readFileSync('../../misc/localhost.crt', 'utf8')
+    },
+
     // enable / disable colors in the output (reporters and logs)
     colors: true,
 
@@ -121,6 +130,8 @@ module.exports = function(config) {
     // logLevel: config.LOG_DEBUG,
     client: {
       captureConsole: true,
+      runInParent: true,
+      useIframe: false,
     },
 
     // enable / disable watching file and executing tests whenever any file changes

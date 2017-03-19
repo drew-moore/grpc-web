@@ -24,6 +24,7 @@ declare function it(name: string, test: (done: () => void) => void): void;
 
 describe("grpc-web", () => {
   it("should make a unary request", (done) => {
+    console.log("should make a unary request");
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
     let didGetOnError = false;
@@ -32,6 +33,7 @@ describe("grpc-web", () => {
     ping.setValue("hello world");
 
     grpc.invoke(TestService.Ping, {
+      debug: true,
       request: ping,
       host: "https://localhost:9090",
       onHeaders: function(headers: BrowserHeaders) {
@@ -40,10 +42,12 @@ describe("grpc-web", () => {
         deepEqual(headers.get("HeaderTestKey2"), ["Value2"]);
       },
       onMessage: function(message: PingResponse) {
+        console.log("onMessage", message);
         didGetOnMessage = true;
         deepEqual(message.getValue(), "hello world");
       },
       onError: function(err: Error) {
+        console.error("onError", err);
         didGetOnError = true;
       },
       onComplete: function(code: grpc.Code, msg: string | undefined, trailers: BrowserHeaders) {
@@ -60,6 +64,7 @@ describe("grpc-web", () => {
   });
 
   it("should handle a streaming response of multiple messages", (done) => {
+    console.log("should handle a streaming response of multiple messages");
     let didGetOnHeaders = false;
     let onMessageId = 0;
     let didGetOnError = false;
@@ -69,6 +74,7 @@ describe("grpc-web", () => {
     ping.setResponseCount(3000);
 
     grpc.invoke(TestService.PingList, {
+      debug: true,
       request: ping,
       host: "https://localhost:9090",
       onHeaders: function(headers: BrowserHeaders) {
@@ -96,6 +102,7 @@ describe("grpc-web", () => {
   });
 
   it("should handle a streaming response of no messages", (done) => {
+    console.log("should handle a streaming response of no messages");
     let didGetOnHeaders = false;
     let onMessageId = 0;
     let didGetOnError = false;
@@ -105,6 +112,7 @@ describe("grpc-web", () => {
     ping.setResponseCount(0);
 
     grpc.invoke(TestService.PingList, {
+      debug: true,
       request: ping,
       host: "https://localhost:9090",
       onHeaders: function(headers: BrowserHeaders) {
@@ -132,6 +140,7 @@ describe("grpc-web", () => {
   });
 
   it("should report failure", (done) => {
+    console.log("should report failure");
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
     let didGetOnError = false;
@@ -141,6 +150,7 @@ describe("grpc-web", () => {
     ping.setErrorCodeReturned(12);
 
     grpc.invoke(TestService.PingError, {
+      debug: true,
       request: ping,
       host: "https://localhost:9090",
       onHeaders: function(headers: BrowserHeaders) {
@@ -166,6 +176,7 @@ describe("grpc-web", () => {
   });
 
   it("should report failure for a trailers-only response", (done) => {
+    console.log("should report failure for a trailers-only response");
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
     let didGetOnError = false;
@@ -173,6 +184,7 @@ describe("grpc-web", () => {
     const ping = new PingRequest();
 
     grpc.invoke(FailService.NonExistant, { // The test server hasn't registered this service
+      debug: true,
       request: ping,
       host: "https://localhost:9090",
       onHeaders: function(headers: BrowserHeaders) {
@@ -200,6 +212,7 @@ describe("grpc-web", () => {
   });
 
   it("should report failure for a dropped response after headers", (done) => {
+    console.log("should report failure for a dropped response after headers");
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
     let didGetOnComplete = false;
@@ -208,6 +221,7 @@ describe("grpc-web", () => {
     ping.setFailureType(PingRequest.FailureType.DROP);
 
     grpc.invoke(TestService.PingError, {
+      debug: true,
       request: ping,
       host: "https://localhost:9090",
       onHeaders: function (headers: BrowserHeaders) {
@@ -232,6 +246,7 @@ describe("grpc-web", () => {
   });
 
   it("should report failure for a request to an invalid host", (done) => {
+    console.log("should report failure for a request to an invalid host");
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
     let didGetOnComplete = false;
@@ -240,6 +255,7 @@ describe("grpc-web", () => {
     ping.setFailureType(PingRequest.FailureType.DROP);
 
     grpc.invoke(TestService.PingError, {
+      debug: true,
       request: ping,
       host: "https://localhost:9999", // Should not be available
       onHeaders: function (headers: BrowserHeaders) {
