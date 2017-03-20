@@ -1,25 +1,32 @@
 import {BrowserHeaders} from "browser-headers";
-import {TextEncoder} from "text-encoding";
 import {TransportOptions} from "./Transport";
 
+function stringToBuffer(str: string): Uint8Array {
+  const asArray = new Uint8Array(str.length);
+  for(let i = 0; i < str.length; i++) {
+    asArray[i] = (str as any).codePointAt(i) & 0xFF;
+  }
+  return asArray;
+}
+
 export default function xhrRequest(options: TransportOptions) {
-  const textEncoder = new TextEncoder();
   const xhr = new XMLHttpRequest();
   let index = 0;
 
   function onProgressEvent() {
-    const rawText = xhr.responseText.substr(index);
+    console.debug(xhr.responseType);
+    console.debug(xhr.response);
+    const rawText = xhr.response.substr(index);
     console.debug("xhr.rawText",rawText);
-    index = xhr.responseText.length;
+    index = xhr.response.length;
     setTimeout(() => {
-      options.onChunk(textEncoder.encode(rawText, {stream: true}));
+      options.onChunk(stringToBuffer(rawText));
     });
+
   }
 
   function onLoadEvent() {
     setTimeout(() => {
-      // Force the textEncoder to flush.
-      options.onChunk(textEncoder.encode("", {stream: false}));
       options.onComplete();
     });
   }
@@ -34,6 +41,7 @@ export default function xhrRequest(options: TransportOptions) {
 
   xhr.open("POST", options.url);
   xhr.responseType = 'text';
+  xhr.overrideMimeType("text/plain; charset=x-user-defined");
   options.headers.forEach((key, values) => {
     xhr.setRequestHeader(key, values.join(", "));
   });

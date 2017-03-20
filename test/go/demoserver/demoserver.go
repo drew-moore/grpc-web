@@ -84,7 +84,7 @@ func (s *demoSrv) Ping(ctx context.Context, ping *testproto.PingRequest) (*testp
 	grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "Value1", "HeaderTestKey2", "Value2"))
 	grpclog.Printf("demoSrv.Ping invoked")
 	grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "Value1", "TrailerTestKey2", "Value2"))
-	return &testproto.PingResponse{Value: ping.Value}, nil
+	return &testproto.PingResponse{Value: ping.Value, Counter: 252}, nil
 }
 
 func (s *demoSrv) PingError(ctx context.Context, ping *testproto.PingRequest) (*google_protobuf.Empty, error) {

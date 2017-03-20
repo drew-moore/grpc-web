@@ -1,6 +1,5 @@
 import {BrowserHeaders} from "browser-headers";
 import fetchRequest from "./fetch";
-import mozXhrRequest from "./mozXhr";
 import xhrRequest from "./xhr";
 
 declare const Response: any;

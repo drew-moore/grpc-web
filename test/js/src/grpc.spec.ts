@@ -45,6 +45,7 @@ describe("grpc-web", () => {
         console.log("onMessage", message);
         didGetOnMessage = true;
         deepEqual(message.getValue(), "hello world");
+        deepEqual(message.getCounter(), "252");
       },
       onError: function(err: Error) {
         console.error("onError", err);
