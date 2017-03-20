@@ -3,6 +3,7 @@ import fetchRequest from "./fetch";
 import xhrRequest from "./xhr";
 
 declare const Response: any;
+declare const Headers: any;
 
 export interface Transport {
   (options: TransportOptions): void;
@@ -31,22 +32,7 @@ export class DefaultTransportFactory {
     if (typeof Response !== 'undefined' && Response.prototype.hasOwnProperty("body") && typeof Headers === 'function') {
       return fetchRequest;
     }
-    const mozChunked = 'moz-chunked-arraybuffer';
-    if (DefaultTransportFactory.supportsXhrResponseType(mozChunked)) {
-      return mozXhrRequest;
-    }
 
     return xhrRequest;
-  }
-
-  static supportsXhrResponseType(type: string) {
-    try {
-      const tmpXhr = new XMLHttpRequest();
-      tmpXhr.responseType = type;
-      return tmpXhr.responseType === type;
-    } catch (e) {
-      /* IE throws on setting responseType to an unsupported value */
-    }
-    return false;
   }
 }

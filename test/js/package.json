@@ -3,18 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "webpack",
-    "start": "webpack-dev-server --progress --colors --watch --hot --inline --port 8081 --host 0.0.0.0 --output-public-path=https://localhost:8081/assets/ --content-base ./ --https --cert=../../misc/localhost.crt --key=../../misc/localhost.key",
     "build:test": "webpack",
+    "build:dev": "webpack --watch",
     "build:lib": "npm run clean && mkdir -p lib && tsc && mkdir -p build/js && cp -R src/js/*.js build/js && cp -R build/* lib",
     "lint": "tslint -c ./tslint.json ./src/**/*.ts",
     "test": "npm run build:test && ../run-karma.sh --single-run",
-    "build:dev": "webpack --watch",
     "test:dev": "npm run build:test && ../run-karma.sh"
   },
   "license": "none",
   "dependencies": {
     "@types/node": "^7.0.5",
+    "@types/google-protobuf": "^3.2.1",
     "google-protobuf": "^3.2.0"
   },
   "devDependencies": {
