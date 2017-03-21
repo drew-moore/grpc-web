@@ -1,0 +1,19 @@
+{
+  "name": "grpc-web-ci",
+  "scripts": {
+    "test:integration": "cd test && npm test",
+    "test:golang": "cd go && go test ./...",
+    "test": "npm run test:integration && npm run test:golang"
+  },
+  "author": "Improbable",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@types/google-protobuf": "^3.2.1",
+    "google-protobuf": "^3.2.0",
+    "browser-headers": "^0.2.1"
+  },
+  "devDependencies": {
+    "tslint": "^4.5.1",
+    "typescript": "^2.2.1"
+  }
+}

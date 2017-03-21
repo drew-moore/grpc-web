@@ -23,28 +23,21 @@ It is very important to note that gRPC-Web currently *does not support client-si
 ## Status
 
 At the moment this repo holds:
- * a Go `http.Handler` that exposes a `grpc.Server` with gRPC-Web wrapping over both HTTP2 and HTTP1.1 (*done*)
- * a JavaScript `playground` proof of concept
+ * a Go `http.Handler` that exposes a `grpc.Server` with gRPC-Web wrapping over both HTTP2 and HTTP1.1
+ * a TypeScript library for making gRPC requests
 
 The implementation is in **experimental** stage, and we're trying it out on Improbable Platform's staging environment.
 
-### Trying it out
+### Running the tests
 
 Install the `localhost` certificates of this repo found in `misc/`. Follow [this guide](http://stackoverflow.com/questions/7580508/getting-chrome-to-accept-self-signed-localhost-certificate) for Chrome.
 
-Run the Golang demoserver:
+Run the TypeScript tests against the Golang TestServer
 ```
-go get github.com/improbable-eng/grpc-web/go/demoserver
-cd ${GOPATH}/github.com/improbable-eng/grpc-web/go/demoserver
-go build
-./demoserver 
+cd  ${GOPATH}/github.com/improbable-eng/grpc-web/test
+npm test
 ```
-Run the JS `playground` against the DemoServer
-```
-cd  ${GOPATH}/github.com/improbable-eng/grpc-web/js/playground
-npm start
-```
-Point your browser a https://localhost:8081/index.html and open the Developer Console.
+Point your browser at https://localhost:9876
 
 
 

@@ -8,8 +8,7 @@ function killGrpcWebServer {
 }
 
 echo "Starting GrpcWeb Server..."
-go build ../go/demoserver/demoserver.go
-./demoserver &
+./go/build/testserver --tls_cert_file=../misc/localhost.crt --tls_key_file=../misc/localhost.key &
 SERVER_PID=$!
 
 # Check the GrpcWeb server started up ok.

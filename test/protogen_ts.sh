@@ -1,9 +1,9 @@
 #!/bin/bash
-# Generates protobuf Go datastructures from the proto directory.
+# Generates protobuf JS datastructures from the proto/ directory using the *official JS* codegen..
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PROTOBUF_DIR=${PROTOBUF_DIR-${SCRIPT_DIR}/proto}
-PROTOGEN_DIR=go/_proto
+PROTOGEN_DIR=ts/_proto
 GENERATION_DIR=${GENERATION_DIR-${SCRIPT_DIR}/${PROTOGEN_DIR}}
 
 # Builds all .proto files in a given package dirctory.
@@ -13,11 +13,13 @@ function proto_build_dir {
   DIR_FULL=${1}
   DIR_REL=${1##${PROTOBUF_DIR}}
   DIR_REL=${DIR_REL#/}
-  echo -n "proto_build: $DIR_REL "
+  echo -n "proto_build_gen: $GENERATION_DIR "
   mkdir -p ${GENERATION_DIR}/${DIR_REL} 2> /dev/null
-  PATH=${GOPATH}/bin:$PATH protoc \
+  protoc \
+    --plugin=protoc-gen-ts=/Users/marcus/workspace/protoc-gen-ts/bin/protoc-gen-ts \
     -I${PROTOBUF_DIR} \
-    --go_out=plugins=grpc:${GENERATION_DIR} \
+    --js_out=import_style=commonjs,binary:${GENERATION_DIR} \
+    --ts_out=${GENERATION_DIR} \
     ${DIR_FULL}/*.proto || exit $?
   echo "DONE"
 }
