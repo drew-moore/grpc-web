@@ -51,8 +51,8 @@ export namespace grpc {
     host: string,
     request: TRequest,
     headers?: BrowserHeaders.ConstructorArg,
-    onHeaders: (headers: BrowserHeaders) => void,
-    onMessage: (res: TResponse) => void,
+    onHeaders?: (headers: BrowserHeaders) => void,
+    onMessage?: (res: TResponse) => void,
     onComplete: (code: Code, message: string | undefined, trailers: BrowserHeaders) => void,
     onError: (err: Error) => void,
     transport?: Transport,
@@ -92,16 +92,42 @@ export namespace grpc {
 
     const framedRequest = frameRequest(props.request);
 
+    let completed = false;
+    function rawOnComplete(code: Code, message: string | undefined, trailers: BrowserHeaders) {
+      if (completed) return;
+      completed = true;
+      props.onComplete(code, message, trailers);
+    }
+
+    function rawOnHeaders(headers: BrowserHeaders) {
+      if (completed) return;
+      if (props.onHeaders) {
+        props.onHeaders(headers);
+      }
+    }
+
+    function rawOnError(err: Error) {
+      if (completed) return;
+      completed = true;
+      props.onError(err);
+    }
+
+    function rawOnMessage(res: TResponse) {
+      if (completed) return;
+      if (props.onMessage) {
+        props.onMessage(res);
+      }
+    }
+
     let responseHeaders: BrowserHeaders;
     let responseTrailers: BrowserHeaders;
+    const parser = new ChunkParser();
+
 
     let transport = props.transport;
     if (!transport) {
       transport = DefaultTransportFactory.getTransport();
     }
-
-    const parser = new ChunkParser();
-
     transport({
       url: `${props.host}/${methodDescriptor.service.serviceName}/${methodDescriptor.methodName}`,
       headers: requestHeaders,
@@ -111,9 +137,7 @@ export namespace grpc {
         responseHeaders = headers;
         props.debug && console.debug("onHeaders", headers, status);
         props.debug && console.debug("responseHeaders", JSON.stringify(responseHeaders, null, 2));
-        if (props.onHeaders) {
-          props.onHeaders(headers);
-        }
+        rawOnHeaders(headers);
       },
       onChunk: (chunkBytes: Uint8Array) => {
         props.debug && console.debug("onChunk: ", chunkBytes);
@@ -121,19 +145,16 @@ export namespace grpc {
         let data: Chunk[] = [];
         try {
           data = parser.parse(chunkBytes);
-          console.log("data", data);
         } catch (e) {
-          console.error("parse error", e);
           props.onError(e);
+          return;
         }
 
         data.forEach((d: Chunk) => {
           props.debug && console.debug("onChunk ", d);
 
           if (d.chunkType === ChunkType.MESSAGE) {
-            if (props.onMessage) {
-              props.onMessage(methodDescriptor.responseType.deserializeBinary(d.data!));
-            }
+            rawOnMessage(methodDescriptor.responseType.deserializeBinary(d.data!));
           } else if (d.chunkType === ChunkType.TRAILERS) {
             responseTrailers = new BrowserHeaders(d.trailers);
           }
@@ -145,7 +166,7 @@ export namespace grpc {
         if (responseTrailers === undefined) {
           if (responseHeaders === undefined) {
             // The request was unsuccessful - it did not receive any headers
-            props.onError(new Error("Response closed without headers"));
+            rawOnError(new Error("Response closed without grpc-status (No headers)"));
             return;
           }
 
@@ -154,12 +175,12 @@ export namespace grpc {
 
           const grpcStatus = getStatusFromHeaders(responseHeaders);
           if (grpcStatus === null) {
-            props.onError(new Error("Headers-only response closed without grpc-status"));
+            rawOnError(new Error("Response closed without grpc-status (Headers only)"));
             return;
           }
 
           const grpcMessage = responseHeaders.get("grpc-message") || [];
-          props.onComplete(grpcStatus, grpcMessage[0], responseHeaders);
+          rawOnComplete(grpcStatus, grpcMessage[0], responseHeaders);
           return;
         }
 
@@ -167,12 +188,12 @@ export namespace grpc {
 
         const grpcStatus = getStatusFromHeaders(responseTrailers);
         if (grpcStatus === null) {
-          props.onError(new Error("Response closed without grpc-status"));
+          rawOnError(new Error("Response closed without grpc-status (Trailers provided)"));
           return;
         }
 
         const grpcMessage = responseTrailers.get("grpc-message") || [];
-        props.onComplete(grpcStatus, grpcMessage[0], responseTrailers);
+        rawOnComplete(grpcStatus, grpcMessage[0], responseTrailers);
       }
     });
   }

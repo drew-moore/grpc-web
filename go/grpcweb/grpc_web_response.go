@@ -54,7 +54,7 @@ func (w *grpcWebResponse) copyJustHeadersToWrapped() {
 	wrappedHeader := w.wrapped.Header()
 	for k, vv := range w.headers {
 		// Skip the pre-annoucement of Trailer headers. Don't add them to the response headers.
-		if k == "trailer" {
+		if strings.ToLower(k) == "trailer" {
 			continue
 		}
 		for _, v := range vv {
@@ -78,7 +78,7 @@ func (w *grpcWebResponse) copyTrailersAndHeadersToWrapped() {
 	wrappedHeader := w.wrapped.Header()
 	for k, vv := range w.headers {
 		// Skip the pre-annoucement of Trailer headers. Don't add them to the response headers.
-		if k == "trailer" {
+		if strings.ToLower(k) == "trailer" {
 			continue
 		}
 		// Skip the Trailer prefix

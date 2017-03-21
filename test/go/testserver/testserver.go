@@ -58,18 +58,18 @@ func main() {
 		Handler: corsWrapper.Handler(http.HandlerFunc(handler)),
 	}
 
-	grpclog.Printf("Starting servers. http1.1: port %d http2: port %d", *http1Port, *http2Port)
+	grpclog.Printf("Starting servers. http1.1 port: %d http2 port: %d", *http1Port, *http2Port)
 
 	// Start the Http1.1 server
 	go func() {
 		if err := http1Server.ListenAndServeTLS(*tlsCertFilePath, *tlsKeyFilePath); err != nil {
-			grpclog.Fatalf("failed starting server: %v", err)
+			grpclog.Fatalf("failed starting http1.1 server: %v", err)
 		}
 	}()
 
 	// Start the Http2 server
 	if err := http2Server.ListenAndServeTLS(*tlsCertFilePath, *tlsKeyFilePath); err != nil {
-		grpclog.Fatalf("failed starting server: %v", err)
+		grpclog.Fatalf("failed starting http2 server: %v", err)
 	}
 }
 

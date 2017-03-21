@@ -14,6 +14,7 @@ export default function xhrRequest(options: TransportOptions) {
   let index = 0;
 
   function onProgressEvent() {
+    console.debug("xhr", xhr);
     console.debug(xhr.responseType);
     console.debug(xhr.response);
     const rawText = xhr.response.substr(index);

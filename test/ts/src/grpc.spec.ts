@@ -20,7 +20,7 @@ import {
 } from "assert";
 
 declare function describe(name: string, test: () => void): void;
-declare function it(name: string, test: (done: () => void) => void): void;
+declare function it(name: string, test: (done: () => void) => void, timeout?: number): void;
 
 function testWithLocalPort(port: number) {
   it("should make a unary request", (done) => {
@@ -234,8 +234,12 @@ function testWithLocalPort(port: number) {
         didGetOnMessage = true;
       },
       onError: function (err: Error) {
-        equal(err.message, "Headers-only response closed without grpc-status");
-        ok(didGetOnHeaders);
+        // Some browsers return empty Headers for failed requests
+        if (didGetOnHeaders) {
+          equal(err.message, "Response closed without grpc-status (Headers only)");
+        } else {
+          equal(err.message, "Response closed without grpc-status (No headers)");
+        }
         ok(!didGetOnMessage);
         ok(!didGetOnComplete);
         done();
@@ -260,7 +264,7 @@ describe("grpc-web", () => {
     const ping = new PingRequest();
     ping.setFailureType(PingRequest.FailureType.DROP);
 
-    grpc.invoke(TestService.PingError, {
+    grpc.invoke(TestService.Ping, {
       debug: true,
       request: ping,
       host: "https://localhost:9999", // Should not be available
@@ -271,8 +275,12 @@ describe("grpc-web", () => {
         didGetOnMessage = true;
       },
       onError: function (err: Error) {
-        equal(err.message, "Response closed without headers");
-        ok(!didGetOnHeaders);
+        // Some browsers return empty Headers for failed requests
+        if (didGetOnHeaders) {
+          equal(err.message, "Response closed without grpc-status (Headers only)");
+        } else {
+          equal(err.message, "Response closed without grpc-status (No headers)");
+        }
         ok(!didGetOnMessage);
         ok(!didGetOnComplete);
         done();
