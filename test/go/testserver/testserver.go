@@ -37,7 +37,6 @@ func main() {
 	grpclog.SetLogger(log.New(os.Stdout, "testserver: ", log.LstdFlags))
 
 	handler := func(resp http.ResponseWriter, req *http.Request) {
-		log.Printf("Got request: %v", req)
 		grpcweb.WrapServer(grpcServer)(resp, req)
 	}
 
@@ -78,23 +77,19 @@ type testSrv struct {
 
 func (s *testSrv) PingEmpty(ctx context.Context, _ *google_protobuf.Empty) (*testproto.PingResponse, error) {
 	grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "Value1", "HeaderTestKey2", "Value2"))
-	grpclog.Printf("testSrv.PingEmpty invoked")
 	grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "Value1", "TrailerTestKey2", "Value2"))
 	return &testproto.PingResponse{Value: "foobar"}, nil
 }
 
 func (s *testSrv) Ping(ctx context.Context, ping *testproto.PingRequest) (*testproto.PingResponse, error) {
 	grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "Value1", "HeaderTestKey2", "Value2"))
-	grpclog.Printf("testSrv.Ping invoked")
 	grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "Value1", "TrailerTestKey2", "Value2"))
 	return &testproto.PingResponse{Value: ping.Value, Counter: 252}, nil
 }
 
 func (s *testSrv) PingError(ctx context.Context, ping *testproto.PingRequest) (*google_protobuf.Empty, error) {
-	grpclog.Printf("testSrv.PingError invoked")
 	if ping.FailureType == testproto.PingRequest_DROP {
 		t, _ := transport.StreamFromContext(ctx)
-		fmt.Println("About to intentionally close the transport")
 		t.ServerTransport().Close()
 		return nil, grpc.Errorf(codes.Unavailable, "You got closed. You probably won't see this error")
 
@@ -107,7 +102,6 @@ func (s *testSrv) PingError(ctx context.Context, ping *testproto.PingRequest) (*
 func (s *testSrv) PingList(ping *testproto.PingRequest, stream testproto.TestService_PingListServer) error {
 	stream.SendHeader(metadata.Pairs("HeaderTestKey1", "Value1", "HeaderTestKey2", "Value2"))
 	stream.SetTrailer(metadata.Pairs("TrailerTestKey1", "Value1", "TrailerTestKey2", "Value2"))
-	grpclog.Printf("testSrv.PingList invoked with %d", ping.ResponseCount)
 	for i := int32(0); i < ping.ResponseCount; i++ {
 		stream.Send(&testproto.PingResponse{Value: fmt.Sprintf("%s %d", ping.Value, i), Counter: i})
 	}

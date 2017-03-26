@@ -1,9 +1,7 @@
 // Karma configuration
 
 var fs = require("fs");
-
 module.exports = function(config) {
-
   var customLaunchers = {
     'SL_Safari_Latest': {
       base: 'SauceLabs',
@@ -66,7 +64,7 @@ module.exports = function(config) {
     reporters.push('saucelabs');
     Array.prototype.push.apply(browsers, Object.keys(customLaunchers));
     singlerun = true;
-    concurrency = 4;
+    concurrency = 2;
   }
 
   config.set({
@@ -83,7 +81,6 @@ module.exports = function(config) {
     files: [
       'ts/build/integration-tests.js'
     ],
-    exclude: [],
     preprocessors: {
       '**/*.js': ['sourcemap']
     },

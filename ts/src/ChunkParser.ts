@@ -4,7 +4,6 @@ import {TextDecoder} from "text-encoding";
 const HEADER_SIZE = 5;
 
 function isTrailerHeader(headerView: DataView) {
-  console.log("isTrailerHeader", headerView);
   // This is encoded in the MSB of the grpc header's first byte.
   return (headerView.getUint8(0) & 0x80) === 0x80
 }
@@ -14,7 +13,7 @@ function parseTrailerData(msgData: Uint8Array): BrowserHeaders {
 }
 
 function readLengthFromHeader(headerView: DataView) {
-  return headerView.getUint32(1, false /* bigEndian */)
+  return headerView.getUint32(1, false)
 }
 
 function hasEnoughBytes(buffer: ArrayBuffer, position: number, byteCount: number) {
@@ -37,8 +36,6 @@ export class ChunkParser{
   position: number = 0;
 
   parse(bytes: Uint8Array, flush?: boolean): Chunk[] {
-    console.log("ChunkParser.parse bytes:", bytes, "flush: ", flush);
-    console.log("ChunkParser.buffer", this.buffer);
     if (bytes.length === 0 && flush) {
       return [];
     }
@@ -62,7 +59,6 @@ export class ChunkParser{
 
     while (true) {
       if (!hasEnoughBytes(this.buffer, this.position, HEADER_SIZE)) {
-        console.log("Not enough bytes");
         return chunkData;
       }
 
@@ -78,7 +74,6 @@ export class ChunkParser{
 
       if (isTrailerHeader(headerView)) {
         chunkData.push({chunkType: ChunkType.TRAILERS, trailers: parseTrailerData(messageData)});
-        // This must be the end of the chunk
         return chunkData;
       } else {
         chunkData.push({chunkType: ChunkType.MESSAGE, data: messageData})

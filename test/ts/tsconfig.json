@@ -13,8 +13,7 @@
     "noEmitOnError": true
   },
   "types": [
-    "karma",
-    "node"
+    "jasmine"
   ],
   "include": [
     "./src"

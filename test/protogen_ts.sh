@@ -16,7 +16,7 @@ function proto_build_dir {
   echo -n "proto_build_gen: $GENERATION_DIR "
   mkdir -p ${GENERATION_DIR}/${DIR_REL} 2> /dev/null
   protoc \
-    --plugin=protoc-gen-ts=/Users/marcus/workspace/protoc-gen-ts/bin/protoc-gen-ts \
+    --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts \
     -I${PROTOBUF_DIR} \
     --js_out=import_style=commonjs,binary:${GENERATION_DIR} \
     --ts_out=${GENERATION_DIR} \

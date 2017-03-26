@@ -5,7 +5,7 @@ module.exports = {
     path: path.resolve(__dirname, 'build'),
     filename: 'integration-tests.js',
   },
-  devtool: 'source-map',
+  devtool: 'inline-source-map',
   module: {
     rules: [
       {
