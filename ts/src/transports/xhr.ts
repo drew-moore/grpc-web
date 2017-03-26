@@ -3,7 +3,7 @@ import {TransportOptions} from "./Transport";
 
 function stringToBuffer(str: string): Uint8Array {
   const asArray = new Uint8Array(str.length);
-  for(let i = 0; i < str.length; i++) {
+  for (let i = 0; i < str.length; i++) {
     asArray[i] = (str as any).codePointAt(i) & 0xFF;
   }
   return asArray;
@@ -29,7 +29,7 @@ export default function xhrRequest(options: TransportOptions) {
   }
 
   function onStateChange() {
-    if(this.readyState == this.HEADERS_RECEIVED) {
+    if (this.readyState === this.HEADERS_RECEIVED) {
       setTimeout(() => {
         options.onHeaders(new BrowserHeaders(this.getAllResponseHeaders()), this.status);
       });
@@ -37,18 +37,18 @@ export default function xhrRequest(options: TransportOptions) {
   }
 
   xhr.open("POST", options.url);
-  xhr.responseType = 'text';
+  xhr.responseType = "text";
   xhr.overrideMimeType("text/plain; charset=x-user-defined");
   options.headers.forEach((key, values) => {
     xhr.setRequestHeader(key, values.join(", "));
   });
-  if (options.credentials === 'include') {
+  if (options.credentials === "include") {
     xhr.withCredentials = true;
   }
-  xhr.addEventListener('readystatechange', onStateChange);
-  xhr.addEventListener('progress', onProgressEvent);
-  xhr.addEventListener('loadend', onLoadEvent);
-  xhr.addEventListener('error', (err: ErrorEvent) => {
+  xhr.addEventListener("readystatechange", onStateChange);
+  xhr.addEventListener("progress", onProgressEvent);
+  xhr.addEventListener("loadend", onLoadEvent);
+  xhr.addEventListener("error", (err: ErrorEvent) => {
     setTimeout(() => {
       options.onComplete(err.error);
     });

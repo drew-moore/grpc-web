@@ -29,7 +29,7 @@ export class DefaultTransportFactory {
   }
 
   static detectTransport() {
-    if (typeof Response !== 'undefined' && Response.prototype.hasOwnProperty("body") && typeof Headers === 'function') {
+    if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
       return fetchRequest;
     }
 

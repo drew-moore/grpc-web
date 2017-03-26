@@ -1,11 +1,12 @@
+// Polyfills
 if (typeof Uint8Array === "undefined") {
-  (window as any).Uint8Array = require('typedarray').Uint8Array;
+  (window as any).Uint8Array = require("typedarray").Uint8Array;
 }
 if (typeof ArrayBuffer === "undefined") {
-  (window as any).ArrayBuffer = require('typedarray').ArrayBuffer;
+  (window as any).ArrayBuffer = require("typedarray").ArrayBuffer;
 }
 if (typeof DataView === "undefined") {
-  (window as any).DataView = require('typedarray').DataView;
+  (window as any).DataView = require("typedarray").DataView;
 }
 
 import {
@@ -255,8 +256,8 @@ function testWithLocalPort(port: number) {
 }
 
 describe("grpc-web", () => {
-  testWithLocalPort(9090); //HTTP1.1
-  testWithLocalPort(9091); //HTTP2
+  testWithLocalPort(9090); // HTTP1.1
+  testWithLocalPort(9091); // HTTP2
 
   it("should report failure for a request to an invalid host", (done) => {
     let didGetOnHeaders = false;

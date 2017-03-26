@@ -9,7 +9,7 @@
     "build:lib": "npm run clean && tsc && cp -R build/ dist/",
     "lint": "tslint -c ./tslint.json ./src/**/*.ts"
   },
-  "author": "",
+  "author": "Improbable",
   "license": "Apache-2.0",
   "dependencies": {
     "@types/google-protobuf": "^3.2.1",
