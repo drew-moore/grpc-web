@@ -5,7 +5,7 @@ This repository implements the upcoming [gRPC-Web spec](https://github.com/grpc/
 The stack consists of :
  * a Go `http.Handler` that exposes a `grpc.Server` with gRPC-Web wrapping over both HTTP2 and HTTP1.1 (*done*)
  * a TypeScript library (usable in ES5) that implements for invoking gRPC-Web endpoints (*in progress*)
- * a TypeScript `protoc` plugin that code-generates TypeScript types and service stubs around the library (*in progress)
+ * a [TypeScript `protoc` plugin](https://www.npmjs.com/package/ts-protoc-gen) that code-generates TypeScript types (generated service stubs are coming soon)
  * a Go-based gRPC Proxy Server that allows exposing non-gRPC-Web enabled gRPC services (*todo*) 
  
 
