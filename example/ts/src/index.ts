@@ -1,6 +1,6 @@
 import {grpc, BrowserHeaders} from "grpc-web-client";
-import {BookService} from "./services";
 import {QueryBooksRequest, Book, GetBookRequest} from "../_proto/examplecom/library/book_service_pb";
+import {BookService} from "../_proto/examplecom/library/book_service_pb_service";
 
 declare const USE_TLS: boolean;
 const host = USE_TLS ? "https://localhost:9091" : "http://localhost:9090";
