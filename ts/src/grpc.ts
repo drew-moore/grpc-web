@@ -54,7 +54,6 @@ export namespace grpc {
     onHeaders?: (headers: BrowserHeaders) => void,
     onMessage?: (res: TResponse) => void,
     onComplete: (code: Code, message: string | undefined, trailers: BrowserHeaders) => void,
-    onError: (err: Error) => void,
     transport?: Transport,
     debug?: boolean,
   }
@@ -89,7 +88,7 @@ export namespace grpc {
                                                                                                                                          props: RpcOptions<TRequest, TResponse>) {
     const requestHeaders = new BrowserHeaders(props.headers ? props.headers : {});
     requestHeaders.set("content-type", "application/grpc-web");
-    requestHeaders.set("X-GRPC-WEB", "1"); // Required for CORS handling
+    requestHeaders.set("x-grpc-web", "1"); // Required for CORS handling
 
     const framedRequest = frameRequest(props.request);
 
@@ -107,10 +106,10 @@ export namespace grpc {
       }
     }
 
-    function rawOnError(err: Error) {
+    function rawOnError(code: Code, msg: string) {
       if (completed) return;
       completed = true;
-      props.onError(err);
+      props.onComplete(code, msg, new BrowserHeaders());
     }
 
     function rawOnMessage(res: TResponse) {
@@ -135,9 +134,9 @@ export namespace grpc {
       body: framedRequest,
       credentials: "",
       onHeaders: (headers: BrowserHeaders, status: number) => {
-        responseHeaders = headers;
         props.debug && console.debug("onHeaders", headers, status);
         props.debug && console.debug("responseHeaders", JSON.stringify(responseHeaders, null, 2));
+        responseHeaders = headers;
         rawOnHeaders(headers);
       },
       onChunk: (chunkBytes: Uint8Array) => {
@@ -147,7 +146,7 @@ export namespace grpc {
         try {
           data = parser.parse(chunkBytes);
         } catch (e) {
-          props.onError(e);
+          rawOnError(Code.Internal, e.message);
           return;
         }
 
@@ -167,7 +166,7 @@ export namespace grpc {
         if (responseTrailers === undefined) {
           if (responseHeaders === undefined) {
             // The request was unsuccessful - it did not receive any headers
-            rawOnError(new Error("Response closed without grpc-status (No headers)"));
+            rawOnError(Code.Internal, "Response closed without grpc-status (No headers)");
             return;
           }
 
@@ -176,7 +175,7 @@ export namespace grpc {
 
           const grpcStatus = getStatusFromHeaders(responseHeaders);
           if (grpcStatus === null) {
-            rawOnError(new Error("Response closed without grpc-status (Headers only)"));
+            rawOnError(Code.Internal, "Response closed without grpc-status (Headers only)");
             return;
           }
 
@@ -189,7 +188,7 @@ export namespace grpc {
 
         const grpcStatus = getStatusFromHeaders(responseTrailers);
         if (grpcStatus === null) {
-          rawOnError(new Error("Response closed without grpc-status (Trailers provided)"));
+          rawOnError(Code.Internal, "Response closed without grpc-status (Trailers provided)");
           return;
         }
 

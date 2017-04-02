@@ -32,7 +32,6 @@ function testWithLocalPort(port: number) {
   it("should make a unary request", (done) => {
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
-    let didGetOnError = false;
 
     const ping = new PingRequest();
     ping.setValue("hello world");
@@ -52,9 +51,6 @@ function testWithLocalPort(port: number) {
         assert.deepEqual(message.getValue(), "hello world");
         assert.deepEqual(message.getCounter(), 252);
       },
-      onError: function(err: Error) {
-        didGetOnError = true;
-      },
       onComplete: function(code: grpc.Code, msg: string | undefined, trailers: BrowserHeaders) {
         assert.strictEqual(code, grpc.Code.OK, "expected OK (0)");
         assert.strictEqual(msg, undefined, "expected no message");
@@ -62,7 +58,6 @@ function testWithLocalPort(port: number) {
         assert.deepEqual(trailers.get("TrailerTestKey2"), ["Value2"]);
         assert.ok(didGetOnHeaders);
         assert.ok(didGetOnMessage);
-        assert.ok(!didGetOnError);
         done();
       }
     });
@@ -71,7 +66,6 @@ function testWithLocalPort(port: number) {
   it("should handle a streaming response of multiple messages", (done) => {
     let didGetOnHeaders = false;
     let onMessageId = 0;
-    let didGetOnError = false;
 
     const ping = new PingRequest();
     ping.setValue("hello world");
@@ -90,9 +84,6 @@ function testWithLocalPort(port: number) {
         assert.ok(message instanceof PingResponse);
         assert.strictEqual(message.getCounter(), onMessageId++);
       },
-      onError: function(err: Error) {
-        didGetOnError = true;
-      },
       onComplete: function(code: grpc.Code, msg: string | undefined, trailers: BrowserHeaders) {
         assert.strictEqual(code, grpc.Code.OK, "expected OK (0)");
         assert.strictEqual(msg, undefined, "expected no message");
@@ -100,7 +91,6 @@ function testWithLocalPort(port: number) {
         assert.deepEqual(trailers.get("TrailerTestKey2"), ["Value2"]);
         assert.ok(didGetOnHeaders);
         assert.strictEqual(onMessageId, 3000);
-        assert.ok(!didGetOnError);
         done();
       }
     });
@@ -109,7 +99,6 @@ function testWithLocalPort(port: number) {
   it("should handle a streaming response of no messages", (done) => {
     let didGetOnHeaders = false;
     let onMessageId = 0;
-    let didGetOnError = false;
 
     const ping = new PingRequest();
     ping.setValue("hello world");
@@ -128,9 +117,6 @@ function testWithLocalPort(port: number) {
         assert.ok(message instanceof PingResponse);
         assert.strictEqual(message.getCounter(), onMessageId++);
       },
-      onError: function(err: Error) {
-        didGetOnError = true;
-      },
       onComplete: function(code: grpc.Code, msg: string | undefined, trailers: BrowserHeaders) {
         assert.strictEqual(code, grpc.Code.OK, "expected OK (0)");
         assert.strictEqual(msg, undefined, "expected no message");
@@ -138,7 +124,6 @@ function testWithLocalPort(port: number) {
         assert.deepEqual(trailers.get("TrailerTestKey2"), ["Value2"]);
         assert.ok(didGetOnHeaders);
         assert.strictEqual(onMessageId, 0);
-        assert.ok(!didGetOnError);
         done();
       }
     });
@@ -147,7 +132,6 @@ function testWithLocalPort(port: number) {
   it("should report status code for error with headers + trailers", (done) => {
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
-    let didGetOnError = false;
 
     const ping = new PingRequest();
     ping.setFailureType(PingRequest.FailureType.CODE);
@@ -164,9 +148,6 @@ function testWithLocalPort(port: number) {
         didGetOnMessage = true;
         assert.ok(message instanceof Empty);
       },
-      onError: function(err: Error) {
-        didGetOnError = true;
-      },
       onComplete: function(code: grpc.Code, msg: string, trailers: BrowserHeaders) {
         assert.deepEqual(trailers.get("grpc-status"), ["12"]);
         assert.deepEqual(trailers.get("grpc-message"), ["Intentionally returning error for PingError"]);
@@ -174,7 +155,6 @@ function testWithLocalPort(port: number) {
         assert.strictEqual(msg, "Intentionally returning error for PingError");
         assert.ok(didGetOnHeaders);
         assert.ok(!didGetOnMessage);
-        assert.ok(!didGetOnError);
         done();
       }
     });
@@ -183,7 +163,6 @@ function testWithLocalPort(port: number) {
   it("should report failure for a CORS failure", (done) => {
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
-    let didGetOnComplete = false;
 
     const ping = new PingRequest();
 
@@ -198,19 +177,16 @@ function testWithLocalPort(port: number) {
         didGetOnMessage = true;
         assert.ok(message instanceof Empty);
       },
-      onError: function(err: Error) {
+      onComplete: function(code: grpc.Code, msg: string, trailers: BrowserHeaders) {
         // Some browsers return empty Headers for failed requests
         if (didGetOnHeaders) {
-          assert.strictEqual(err.message, "Response closed without grpc-status (Headers only)");
+          assert.strictEqual(msg, "Response closed without grpc-status (Headers only)");
         } else {
-          assert.strictEqual(err.message, "Response closed without grpc-status (No headers)");
+          assert.strictEqual(msg, "Response closed without grpc-status (No headers)");
         }
+        assert.strictEqual(code, grpc.Code.Internal);
         assert.ok(!didGetOnMessage);
-        assert.ok(!didGetOnComplete);
         done();
-      },
-      onComplete: function(code: grpc.Code, msg: string, trailers: BrowserHeaders) {
-        didGetOnComplete = true;
       }
     });
   });
@@ -218,7 +194,6 @@ function testWithLocalPort(port: number) {
   it("should report failure for a dropped response after headers", (done) => {
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
-    let didGetOnComplete = false;
 
     const ping = new PingRequest();
     ping.setFailureType(PingRequest.FailureType.DROP);
@@ -236,19 +211,16 @@ function testWithLocalPort(port: number) {
         didGetOnMessage = true;
         assert.ok(message instanceof Empty);
       },
-      onError: function (err: Error) {
+      onComplete: function (code: grpc.Code, msg: string, trailers: BrowserHeaders) {
         // Some browsers return empty Headers for failed requests
         if (didGetOnHeaders) {
-          assert.strictEqual(err.message, "Response closed without grpc-status (Headers only)");
+          assert.strictEqual(msg, "Response closed without grpc-status (Headers only)");
         } else {
-          assert.strictEqual(err.message, "Response closed without grpc-status (No headers)");
+          assert.strictEqual(msg, "Response closed without grpc-status (No headers)");
         }
+        assert.strictEqual(code, grpc.Code.Internal);
         assert.ok(!didGetOnMessage);
-        assert.ok(!didGetOnComplete);
         done();
-      },
-      onComplete: function (code: grpc.Code, msg: string, trailers: BrowserHeaders) {
-        didGetOnComplete = true;
       }
     });
   });
@@ -261,7 +233,6 @@ describe("grpc-web-client", () => {
   it("should report failure for a request to an invalid host", (done) => {
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
-    let didGetOnComplete = false;
 
     const ping = new PingRequest();
     ping.setFailureType(PingRequest.FailureType.DROP);
@@ -277,19 +248,16 @@ describe("grpc-web-client", () => {
         didGetOnMessage = true;
         assert.ok(message instanceof Empty);
       },
-      onError: function (err: Error) {
+      onComplete: function (code: grpc.Code, msg: string, trailers: BrowserHeaders) {
         // Some browsers return empty Headers for failed requests
         if (didGetOnHeaders) {
-          assert.strictEqual(err.message, "Response closed without grpc-status (Headers only)");
+          assert.strictEqual(msg, "Response closed without grpc-status (Headers only)");
         } else {
-          assert.strictEqual(err.message, "Response closed without grpc-status (No headers)");
+          assert.strictEqual(msg, "Response closed without grpc-status (No headers)");
         }
+        assert.strictEqual(code, grpc.Code.Internal);
         assert.ok(!didGetOnMessage);
-        assert.ok(!didGetOnComplete);
         done();
-      },
-      onComplete: function (code: grpc.Code, msg: string, trailers: BrowserHeaders) {
-        didGetOnComplete = true;
       }
     });
   });
@@ -297,7 +265,6 @@ describe("grpc-web-client", () => {
   it("should report failure for a trailers-only response", (done) => {
     let didGetOnHeaders = false;
     let didGetOnMessage = false;
-    let didGetOnError = false;
 
     const ping = new PingRequest();
 
@@ -314,9 +281,6 @@ describe("grpc-web-client", () => {
         didGetOnMessage = true;
         assert.ok(message instanceof Empty);
       },
-      onError: function(err: Error) {
-        didGetOnError = true;
-      },
       onComplete: function(code: grpc.Code, msg: string, trailers: BrowserHeaders) {
         assert.deepEqual(trailers.get("grpc-status"), ["12"]);
         assert.deepEqual(trailers.get("grpc-message"), ["unknown service improbable.grpcweb.test.FailService"]);
@@ -324,7 +288,6 @@ describe("grpc-web-client", () => {
         assert.strictEqual(msg, "unknown service improbable.grpcweb.test.FailService");
         assert.ok(didGetOnHeaders);
         assert.ok(!didGetOnMessage);
-        assert.ok(!didGetOnError);
         done();
       }
     });
