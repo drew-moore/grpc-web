@@ -23,8 +23,9 @@ import (
 
 var (
 	http1Port       = flag.Int("http1_port", 9090, "Port to listen with HTTP1.1 on.")
-	http2Port       = flag.Int("http2_port", 9091, "Port to listen with HTTP2 on.")
-	http2EmptyPort  = flag.Int("http2_empty_port", 9092, "Port to listen with HTTP2 on with a grpc server that has no services.")
+	http1EmptyPort  = flag.Int("http1_empty_port", 9091, "Port to listen with HTTP1.1 on with a grpc server that has no services.")
+	http2Port       = flag.Int("http2_port", 9092, "Port to listen with HTTP2 with TLS on.")
+	http2EmptyPort  = flag.Int("http2_empty_port", 9093, "Port to listen with HTTP2 with TLS on with a grpc server that has no services.")
 	tlsCertFilePath = flag.String("tls_cert_file", "../../../misc/localhost.crt", "Path to the CRT/PEM file.")
 	tlsKeyFilePath  = flag.String("tls_key_file", "../../../misc/localhost.key", "Path to the private key file.")
 )
@@ -41,32 +42,42 @@ func main() {
 		wrappedServer.ServeHttp(resp, req)
 	}
 
+	emptyGrpcServer := grpc.NewServer()
+	emptyWrappedServer := grpcweb.WrapServer(emptyGrpcServer, grpcweb.WithCorsForRegisteredEndpointsOnly(false))
+	emptyHandler := func(resp http.ResponseWriter, req *http.Request) {
+		emptyWrappedServer.ServeHttp(resp, req)
+	}
+
 	http1Server := http.Server{
 		Addr:    fmt.Sprintf(":%d", *http1Port),
 		Handler: http.HandlerFunc(handler),
 	}
 	http1Server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
-
+	http1EmptyServer := http.Server{
+		Addr:    fmt.Sprintf(":%d", *http1EmptyPort),
+		Handler: http.HandlerFunc(emptyHandler),
+	}
 	http2Server := http.Server{
 		Addr:    fmt.Sprintf(":%d", *http2Port),
 		Handler: http.HandlerFunc(handler),
-	}
-
-	emptyGrpcServer := grpc.NewServer()
-	emptyWrappedServer := grpcweb.WrapServer(emptyGrpcServer, grpcweb.WithCorsForRegisteredEndpointsOnly(false))
-	emptyHandler := func(resp http.ResponseWriter, req *http.Request) {
-		emptyWrappedServer.ServeHttp(resp, req)
 	}
 	http2EmptyServer := http.Server{
 		Addr:    fmt.Sprintf(":%d", *http2EmptyPort),
 		Handler: http.HandlerFunc(emptyHandler),
 	}
 
-	grpclog.Printf("Starting servers. http1.1 port: %d, http2 port: %d, http2 empty port: %d", *http1Port, *http2Port, *http2EmptyPort)
+	grpclog.Printf("Starting servers. http1.1 port: %d, http1.1 empty port: %d, http2 port: %d, http2 empty port: %d", *http1Port, *http1EmptyPort, *http2Port, *http2EmptyPort)
+
+	// Start the empty Http1.1 server
+	go func() {
+		if err := http1EmptyServer.ListenAndServe(); err != nil {
+			grpclog.Fatalf("failed starting http1.1 empty server: %v", err)
+		}
+	}()
 
 	// Start the Http1.1 server
 	go func() {
-		if err := http1Server.ListenAndServeTLS(*tlsCertFilePath, *tlsKeyFilePath); err != nil {
+		if err := http1Server.ListenAndServe(); err != nil {
 			grpclog.Fatalf("failed starting http1.1 server: %v", err)
 		}
 	}()
