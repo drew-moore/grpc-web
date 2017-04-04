@@ -34,6 +34,39 @@ export namespace grpc {
     Unauthenticated = 16,
   }
 
+  function httpStatusToCode(httpStatus: number): Code {
+    switch (httpStatus) {
+      case 200:
+        return Code.OK;
+      case 400:
+        return Code.InvalidArgument;
+      case 401:
+        return Code.Unauthenticated;
+      case 403:
+        return Code.PermissionDenied;
+      case 404:
+        return Code.NotFound;
+      case 409:
+        return Code.Aborted;
+      case 412:
+        return Code.FailedPrecondition;
+      case 429:
+        return Code.ResourceExhausted;
+      case 499:
+        return Code.Canceled;
+      case 500:
+        return Code.Unknown;
+      case 501:
+        return Code.Unimplemented;
+      case 503:
+        return Code.Unavailable;
+      case 504:
+        return Code.DeadlineExceeded;
+      default:
+        return Code.Unknown;
+    }
+  }
+
   export interface ServiceDefinition {
     serviceName: string;
   }
@@ -137,6 +170,14 @@ export namespace grpc {
         props.debug && console.debug("onHeaders", headers, status);
         props.debug && console.debug("responseHeaders", JSON.stringify(responseHeaders, null, 2));
         responseHeaders = headers;
+
+        const code = httpStatusToCode(status);
+        const gRPCMessage = headers.get("grpc-message");
+        if (code !== Code.OK) {
+          rawOnError(code, gRPCMessage ? gRPCMessage[0] : "");
+          return;
+        }
+
         rawOnHeaders(headers);
       },
       onChunk: (chunkBytes: Uint8Array) => {
@@ -185,15 +226,14 @@ export namespace grpc {
         }
 
         // There were trailers - get the status from them
-
         const grpcStatus = getStatusFromHeaders(responseTrailers);
         if (grpcStatus === null) {
           rawOnError(Code.Internal, "Response closed without grpc-status (Trailers provided)");
           return;
         }
 
-        const grpcMessage = responseTrailers.get("grpc-message") || [];
-        rawOnComplete(grpcStatus, grpcMessage[0], responseTrailers);
+        const grpcMessage = responseTrailers.get("grpc-message");
+        rawOnComplete(grpcStatus, grpcMessage ? grpcMessage[0] : "", responseTrailers);
       }
     });
   }

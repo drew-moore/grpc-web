@@ -151,7 +151,7 @@ function testWithLocalPort(port: number) {
       onComplete: function(code: grpc.Code, msg: string, trailers: BrowserHeaders) {
         assert.deepEqual(trailers.get("grpc-status"), ["12"]);
         assert.deepEqual(trailers.get("grpc-message"), ["Intentionally returning error for PingError"]);
-        assert.strictEqual(code, 12);
+        assert.strictEqual(code, grpc.Code.Unimplemented);
         assert.strictEqual(msg, "Intentionally returning error for PingError");
         assert.ok(didGetOnHeaders);
         assert.ok(!didGetOnMessage);
