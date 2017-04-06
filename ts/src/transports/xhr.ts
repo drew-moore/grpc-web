@@ -1,10 +1,22 @@
 import {BrowserHeaders} from "browser-headers";
 import {TransportOptions} from "./Transport";
 
+function codePointAtPolyfill(str: string, index: number) {
+  var code = str.charCodeAt(index);
+  if (code >= 0xd800 && code <= 0xdbff) {
+    var surr = str.charCodeAt(index + 1);
+    if (surr >= 0xdc00 && surr <= 0xdfff)
+      code = 0x10000 + ((code - 0xd800) << 10) + (surr - 0xdc00);
+  }
+
+  return code;
+};
+
 function stringToBuffer(str: string): Uint8Array {
   const asArray = new Uint8Array(str.length);
   for (let i = 0; i < str.length; i++) {
-    asArray[i] = (str as any).codePointAt(i) & 0xFF;
+    const codePoint = (String.prototype as any).codePointAt ? (str as any).codePointAt(i) : codePointAtPolyfill(str, i);
+    asArray[i] = codePoint & 0xFF;
   }
   return asArray;
 }
