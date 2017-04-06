@@ -99,11 +99,11 @@ export namespace grpc {
     return new Uint8Array(frame);
   }
 
-  function getStatusFromHeaders(trailers: BrowserHeaders): Code | null {
-    const fromTrailers = trailers.get("grpc-status") || [];
-    if (fromTrailers.length > 0) {
+  function getStatusFromHeaders(headers: BrowserHeaders): Code | null {
+    const fromHeaders = headers.get("grpc-status") || [];
+    if (fromHeaders.length > 0) {
       try {
-        const asString = fromTrailers[0];
+        const asString = fromHeaders[0];
         const asNumber = parseInt(asString, 10);
         if (Code[asNumber] === undefined) {
           return null;
@@ -129,27 +129,35 @@ export namespace grpc {
     function rawOnComplete(code: Code, message: string | undefined, trailers: BrowserHeaders) {
       if (completed) return;
       completed = true;
-      props.onComplete(code, message, trailers);
+      setTimeout(() => {
+        props.onComplete(code, message, trailers);
+      });
     }
 
     function rawOnHeaders(headers: BrowserHeaders) {
       if (completed) return;
-      if (props.onHeaders) {
-        props.onHeaders(headers);
-      }
+      setTimeout(() => {
+        if (props.onHeaders) {
+          props.onHeaders(headers);
+        }
+      });
     }
 
     function rawOnError(code: Code, msg: string) {
       if (completed) return;
       completed = true;
-      props.onComplete(code, msg, new BrowserHeaders());
+      setTimeout(() => {
+        props.onComplete(code, msg, new BrowserHeaders());
+      });
     }
 
     function rawOnMessage(res: TResponse) {
       if (completed) return;
-      if (props.onMessage) {
-        props.onMessage(res);
-      }
+      setTimeout(() => {
+        if (props.onMessage) {
+          props.onMessage(res);
+        }
+      });
     }
 
     let responseHeaders: BrowserHeaders;
