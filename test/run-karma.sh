@@ -5,7 +5,6 @@ set -x
 function killGoTestServer {
   echo "Killing Go Test server..."
   kill ${SERVER_PID} &> /dev/null
-  exit 1
 }
 
 echo "Starting Go Test server..."
@@ -20,6 +19,4 @@ ps ${SERVER_PID} &> /dev/null
 trap killGoTestServer SIGINT
 trap killGoTestServer EXIT
 
-./node_modules/.bin/karma start ./http.karma.conf.js $@
-
-./node_modules/.bin/karma start ./https.karma.conf.js $@
+./node_modules/.bin/karma start $@

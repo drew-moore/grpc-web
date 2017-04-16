@@ -176,13 +176,14 @@ export namespace grpc {
       credentials: "",
       onHeaders: (headers: BrowserHeaders, status: number) => {
         props.debug && console.debug("onHeaders", headers, status);
-        props.debug && console.debug("responseHeaders", JSON.stringify(responseHeaders, null, 2));
         responseHeaders = headers;
-
+        props.debug && console.debug("onHeaders.responseHeaders", JSON.stringify(responseHeaders, null, 2));
         const code = httpStatusToCode(status);
+        props.debug && console.debug("onHeaders.code", code);
         const gRPCMessage = headers.get("grpc-message");
+        props.debug && console.debug("onHeaders.gRPCMessage", gRPCMessage);
         if (code !== Code.OK) {
-          rawOnError(code, gRPCMessage ? gRPCMessage[0] : "");
+          rawOnError(code, gRPCMessage.length > 0 ? gRPCMessage[0] : "");
           return;
         }
 
@@ -215,7 +216,7 @@ export namespace grpc {
         if (responseTrailers === undefined) {
           if (responseHeaders === undefined) {
             // The request was unsuccessful - it did not receive any headers
-            rawOnError(Code.Internal, "Response closed without grpc-status (No headers)");
+            rawOnError(Code.Unknown, "");
             return;
           }
 

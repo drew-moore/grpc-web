@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 
-	"crypto/tls"
 	"fmt"
 
 	testproto "../_proto/improbable/grpcweb/test"
@@ -23,9 +22,9 @@ import (
 
 var (
 	http1Port       = flag.Int("http1_port", 9090, "Port to listen with HTTP1.1 on.")
-	http1EmptyPort  = flag.Int("http1_empty_port", 9091, "Port to listen with HTTP1.1 on with a grpc server that has no services.")
-	http2Port       = flag.Int("http2_port", 9092, "Port to listen with HTTP2 with TLS on.")
-	http2EmptyPort  = flag.Int("http2_empty_port", 9093, "Port to listen with HTTP2 with TLS on with a grpc server that has no services.")
+	http1EmptyPort  = flag.Int("http1_empty_port", 9095, "Port to listen with HTTP1.1 on with a grpc server that has no services.")
+	http2Port       = flag.Int("http2_port", 9100, "Port to listen with HTTP2 with TLS on.")
+	http2EmptyPort  = flag.Int("http2_empty_port", 9105, "Port to listen with HTTP2 with TLS on with a grpc server that has no services.")
 	tlsCertFilePath = flag.String("tls_cert_file", "../../../misc/localhost.crt", "Path to the CRT/PEM file.")
 	tlsKeyFilePath  = flag.String("tls_key_file", "../../../misc/localhost.key", "Path to the private key file.")
 )
@@ -52,10 +51,12 @@ func main() {
 		Addr:    fmt.Sprintf(":%d", *http1Port),
 		Handler: http.HandlerFunc(handler),
 	}
-	http1Server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
 	http1EmptyServer := http.Server{
 		Addr:    fmt.Sprintf(":%d", *http1EmptyPort),
-		Handler: http.HandlerFunc(emptyHandler),
+		Handler: http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			grpclog.Printf("Got request for http1EmptyServer")
+			emptyHandler(res, req)
+		}),
 	}
 	http2Server := http.Server{
 		Addr:    fmt.Sprintf(":%d", *http2Port),
