@@ -2,7 +2,7 @@
 
 var fs = require("fs");
 
-module.exports = function(useHttps, withSauceLabs) {
+module.exports = function(useHttps, withBrowserStack) {
   function configPreprocessor(args, config, logger, helper) {
     return function(content, file, done) {
       var envContent = 'window.USE_HTTPS = ' + useHttps + ';';
@@ -11,21 +11,15 @@ module.exports = function(useHttps, withSauceLabs) {
   }
 
   var reporters = ['dots'];
-  if (withSauceLabs) {
-    reporters.push('saucelabs');
+  if (withBrowserStack) {
+    reporters.push('BrowserStack');
   }
 
   return {
     basePath: '',
     frameworks: ['jasmine'],
-    sauceLabs: {
-      recordScreenshots: false,
-      avoidProxy: true,
-      connectOptions: {
-        port: 5757,
-        logfile: 'sauce_connect.log'
-      },
-      public: 'public'
+    browserStack: {
+      forcelocal: true
     },
     files: [
       'ts/build/integration-tests.js'
@@ -49,12 +43,12 @@ module.exports = function(useHttps, withSauceLabs) {
     plugins: [
       {'preprocessor:config-inject': ['factory', configPreprocessor]},
       "karma-sourcemap-loader",
-      "karma-sauce-launcher",
+      "karma-browserstack-launcher",
       "karma-jasmine"
     ],
     autoWatch: true,
     captureTimeout: 120000,
-    singlerun: withSauceLabs,
-    concurrency: withSauceLabs ? 3 : Math.Infinity
+    singlerun: withBrowserStack,
+    concurrency: withBrowserStack ? 3 : Math.Infinity
   };
 };
