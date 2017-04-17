@@ -11,9 +11,6 @@ module.exports = function(useHttps, withBrowserStack) {
   }
 
   var reporters = ['dots'];
-  if (withBrowserStack) {
-    reporters.push('BrowserStack');
-  }
 
   return {
     basePath: '',
@@ -35,15 +32,17 @@ module.exports = function(useHttps, withBrowserStack) {
       cert: fs.readFileSync('../misc/localhost.crt', 'utf8')
     },
     colors: true,
+    logLevel: 'DEBUG',
     client: {
       captureConsole: true,
       runInParent: true,
       useIframe: false
     },
     plugins: [
+      require('./selenium'),
       {'preprocessor:config-inject': ['factory', configPreprocessor]},
       "karma-sourcemap-loader",
-      "karma-browserstack-launcher",
+      "karma-selenium-webdriver-launcher",
       "karma-jasmine"
     ],
     autoWatch: true,

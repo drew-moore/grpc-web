@@ -9,6 +9,12 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.js$/,
+        include: /src/,
+        loader: "babel-loader",
+        exclude: /node_modules/
+      },
+      {
         test: /\.ts$/,
         include: /src/,
         exclude: /node_modules/,
@@ -17,6 +23,6 @@ module.exports = {
     ]
   },
   resolve: {
-    extensions: [".ts"]
+    extensions: [".ts", ".js"]
   }
 };

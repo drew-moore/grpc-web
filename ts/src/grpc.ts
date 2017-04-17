@@ -2,6 +2,7 @@ import * as jspb from "google-protobuf";
 import {BrowserHeaders} from "browser-headers";
 import {ChunkParser, Chunk, ChunkType} from "./ChunkParser";
 import {Transport,DefaultTransportFactory} from "./transports/Transport";
+import {debug, debugBuffer} from "./debug";
 
 export {
   BrowserHeaders
@@ -170,18 +171,19 @@ export namespace grpc {
       transport = DefaultTransportFactory.getTransport();
     }
     transport({
+      debug: props.debug || false,
       url: `${props.host}/${methodDescriptor.service.serviceName}/${methodDescriptor.methodName}`,
       headers: requestHeaders,
       body: framedRequest,
       credentials: "",
       onHeaders: (headers: BrowserHeaders, status: number) => {
-        props.debug && console.debug("onHeaders", headers, status);
+        props.debug && debug("onHeaders", headers, status);
         responseHeaders = headers;
-        props.debug && console.debug("onHeaders.responseHeaders", JSON.stringify(responseHeaders, null, 2));
+        props.debug && debug("onHeaders.responseHeaders", JSON.stringify(responseHeaders, null, 2));
         const code = httpStatusToCode(status);
-        props.debug && console.debug("onHeaders.code", code);
+        props.debug && debug("onHeaders.code", code);
         const gRPCMessage = headers.get("grpc-message");
-        props.debug && console.debug("onHeaders.gRPCMessage", gRPCMessage);
+        props.debug && debug("onHeaders.gRPCMessage", gRPCMessage);
         if (code !== Code.OK) {
           rawOnError(code, gRPCMessage.length > 0 ? gRPCMessage[0] : "");
           return;
@@ -190,28 +192,26 @@ export namespace grpc {
         rawOnHeaders(headers);
       },
       onChunk: (chunkBytes: Uint8Array) => {
-        props.debug && console.debug("onChunk: ", chunkBytes);
-
         let data: Chunk[] = [];
         try {
           data = parser.parse(chunkBytes);
         } catch (e) {
+          props.debug && debug("onChunk.parsing error", e, e.message);
           rawOnError(Code.Internal, e.message);
           return;
         }
 
         data.forEach((d: Chunk) => {
-          props.debug && console.debug("onChunk ", d);
-
           if (d.chunkType === ChunkType.MESSAGE) {
-            rawOnMessage(methodDescriptor.responseType.deserializeBinary(d.data!));
+            const deserialized = methodDescriptor.responseType.deserializeBinary(d.data!);
+            rawOnMessage(deserialized);
           } else if (d.chunkType === ChunkType.TRAILERS) {
             responseTrailers = new BrowserHeaders(d.trailers);
           }
         });
       },
       onComplete: () => {
-        props.debug && console.debug("grpc.onComplete");
+        props.debug && debug("grpc.onComplete");
 
         if (responseTrailers === undefined) {
           if (responseHeaders === undefined) {
@@ -221,7 +221,7 @@ export namespace grpc {
           }
 
           // This was a headers/trailers-only response
-          props.debug && console.debug("grpc.headers only response");
+          props.debug && debug("grpc.headers only response");
 
           const grpcStatus = getStatusFromHeaders(responseHeaders);
           if (grpcStatus === null) {
