@@ -1,6 +1,7 @@
 #!/bin/bash
 
 mkdir -p ./ts/_proto
+mkdir -p ./ts/pbjs
 mkdir -p ./go/_proto
 
 if [[ "$GOBIN" == "" ]]; then
@@ -14,6 +15,8 @@ if [[ "$GOBIN" == "" ]]; then
   export GOBIN="$GOPATH/bin"
 fi
 
+
+# Generate jspb (google-protobuf)
 protoc \
   --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts \
   --plugin=protoc-gen-go=${GOBIN}/protoc-gen-go \
@@ -22,3 +25,14 @@ protoc \
   --go_out=plugins=grpc:./go/_proto \
   --ts_out=service=true:./ts/_proto \
   ./proto/examplecom/library/book_service.proto
+
+# Generate protobuf.js
+./node_modules/.bin/pbjs \
+  -t static-module \
+  -p ./proto \
+  -w commonjs \
+  -o ts/pbjs/compiled.js \
+  ./proto/examplecom/library/book_service.proto
+
+# Generate TypeScript declarations for protobuf.js
+./node_modules/.bin/pbts -o ts/pbjs/compiled.d.ts ts/pbjs/compiled.js

@@ -1,4 +1,3 @@
-import * as jspb from "google-protobuf";
 import {BrowserHeaders as Metadata} from "browser-headers";
 import {ChunkParser, Chunk, ChunkType} from "./ChunkParser";
 import {Transport, TransportOptions, DefaultTransportFactory} from "./transports/Transport";
@@ -15,9 +14,17 @@ export {
 
 export namespace grpc {
 
-  export interface ProtobufMessageClass<T extends jspb.Message> {
+  export interface MessageClass {
+    serializeBinary?(): Uint8Array;
+  }
+
+  export interface ProtobufMessageClass<T extends MessageClass> {
     new(): T;
-    deserializeBinary(bytes: Uint8Array): T;
+    deserializeBinary?(bytes: Uint8Array): T;
+    decode?(bytes: Uint8Array): T;
+    encode?(msg: T): {
+      finish(): Uint8Array;
+    };
   }
 
   function httpStatusToCode(httpStatus: number): Code {
@@ -59,7 +66,7 @@ export namespace grpc {
     serviceName: string;
   }
 
-  export interface MethodDefinition<TRequest extends jspb.Message, TResponse extends jspb.Message> {
+  export interface MethodDefinition<TRequest extends MessageClass, TResponse extends MessageClass> {
     methodName: string;
     service: ServiceDefinition;
     requestStream: boolean;
@@ -68,11 +75,11 @@ export namespace grpc {
     responseType: ProtobufMessageClass<TResponse>;
   }
 
-  export type UnaryMethodDefinition<TRequest extends jspb.Message, TResponse extends jspb.Message> = MethodDefinition<TRequest, TResponse> & {
+  export type UnaryMethodDefinition<TRequest extends MessageClass, TResponse extends MessageClass> = MethodDefinition<TRequest, TResponse> & {
     responseStream: false;
   }
 
-  export type RpcOptions<TRequest extends jspb.Message, TResponse extends jspb.Message> = {
+  export type RpcOptions<TRequest extends MessageClass, TResponse extends MessageClass> = {
     host: string,
     request: TRequest,
     metadata?: Metadata.ConstructorArg,
@@ -91,7 +98,7 @@ export namespace grpc {
     trailers: Metadata;
   }
 
-  export type UnaryRpcOptions<M extends UnaryMethodDefinition<TRequest, TResponse>, TRequest extends jspb.Message, TResponse extends jspb.Message> = {
+  export type UnaryRpcOptions<M extends UnaryMethodDefinition<TRequest, TResponse>, TRequest extends MessageClass, TResponse extends MessageClass> = {
     host: string,
     request: TRequest,
     metadata?: Metadata.ConstructorArg,
@@ -100,8 +107,15 @@ export namespace grpc {
     debug?: boolean,
   }
 
-  function frameRequest(request: jspb.Message): ArrayBufferView {
-    const bytes = request.serializeBinary();
+  function frameRequest<T extends MessageClass>(request: T, requestClass: ProtobufMessageClass<T>): ArrayBufferView {
+    let bytes: Uint8Array;
+    if (request.serializeBinary){
+      bytes = request.serializeBinary();
+    } else if (requestClass.encode) {
+      bytes = requestClass.encode(request).finish();
+    } else {
+      throw new Error("Request class is neither jspb or protobuf.js");
+    }
     const frame = new ArrayBuffer(bytes.byteLength + 5);
     new DataView(frame, 1, 4).setUint32(0, bytes.length, false /* big endian */);
     new Uint8Array(frame, 5).set(bytes);
@@ -121,7 +135,7 @@ export namespace grpc {
     return null;
   }
 
-  export function unary<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends UnaryMethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: UnaryRpcOptions<M, TRequest, TResponse>) {
+  export function unary<TRequest extends MessageClass, TResponse extends MessageClass, M extends UnaryMethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: UnaryRpcOptions<M, TRequest, TResponse>) {
     if (methodDescriptor.responseStream) {
       throw new Error(".unary cannot be used with server-streaming methods. Use .invoke instead.");
     }
@@ -152,12 +166,12 @@ export namespace grpc {
     grpc.invoke(methodDescriptor, rpcOpts);
   }
 
-  export function invoke<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: RpcOptions<TRequest, TResponse>) {
+  export function invoke<TRequest extends MessageClass, TResponse extends MessageClass, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: RpcOptions<TRequest, TResponse>) {
     const requestHeaders = new Metadata(props.metadata ? props.metadata : {});
     requestHeaders.set("content-type", "application/grpc-web+proto");
     requestHeaders.set("x-grpc-web", "1"); // Required for CORS handling
 
-    const framedRequest = frameRequest(props.request);
+    const framedRequest = frameRequest(props.request, methodDescriptor.requestType);
 
     let completed = false;
     function rawOnEnd(code: Code, message: string, trailers: Metadata) {
@@ -239,8 +253,15 @@ export namespace grpc {
 
         data.forEach((d: Chunk) => {
           if (d.chunkType === ChunkType.MESSAGE) {
-            const deserialized = methodDescriptor.responseType.deserializeBinary(d.data!);
-            rawOnMessage(deserialized);
+            if (methodDescriptor.responseType.deserializeBinary) {
+              const deserialized = methodDescriptor.responseType.deserializeBinary(d.data!);
+              rawOnMessage(deserialized);
+            } else if(methodDescriptor.responseType.decode) {
+              const deserialized = methodDescriptor.responseType.decode(d.data!);
+              rawOnMessage(deserialized);
+            } else {
+              rawOnError(Code.Internal, `Response class is neither jspb or protobuf.js`);
+            }
           } else if (d.chunkType === ChunkType.TRAILERS) {
             responseTrailers = new Metadata(d.trailers);
             props.debug && debug("onChunk.trailers", responseTrailers);
