@@ -1,4 +1,4 @@
-import {Metadata} from "./grpc";
+import {Metadata} from "./metadata";
 import * as TextEncoding from "text-encoding";
 
 const HEADER_SIZE = 5;

@@ -1,9 +1,3 @@
 export {
-  grpc,
-  Metadata as BrowserHeaders,
-  Metadata,
-  Code,
-  Request,
-  Transport,
-  TransportOptions,
+  grpc
 } from "./grpc";
