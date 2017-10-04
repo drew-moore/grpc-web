@@ -1,6 +1,8 @@
 /**
  * @fileoverview
  * @enhanceable
+ * @suppress {messageConventions} JS Compiler reports an error if a variable or
+ *     field starts with 'MSG_' and isn't a translatable message.
  * @public
  */
 // GENERATED CODE -- DO NOT EDIT!
@@ -59,6 +61,7 @@ proto.improbable.grpcweb.test.PingRequest.prototype.toObject = function(opt_incl
  *     http://goto/soy-param-migration
  * @param {!proto.improbable.grpcweb.test.PingRequest} msg The msg instance to transform.
  * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.PingRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
@@ -163,6 +166,7 @@ proto.improbable.grpcweb.test.PingRequest.prototype.serializeBinary = function()
  * format), writing to the given BinaryWriter.
  * @param {!proto.improbable.grpcweb.test.PingRequest} message
  * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.PingRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
@@ -403,6 +407,7 @@ proto.improbable.grpcweb.test.PingResponse.prototype.toObject = function(opt_inc
  *     http://goto/soy-param-migration
  * @param {!proto.improbable.grpcweb.test.PingResponse} msg The msg instance to transform.
  * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.PingResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
@@ -477,6 +482,7 @@ proto.improbable.grpcweb.test.PingResponse.prototype.serializeBinary = function(
  * format), writing to the given BinaryWriter.
  * @param {!proto.improbable.grpcweb.test.PingResponse} message
  * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.PingResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
@@ -570,6 +576,7 @@ proto.improbable.grpcweb.test.ContinueStreamRequest.prototype.toObject = functio
  *     http://goto/soy-param-migration
  * @param {!proto.improbable.grpcweb.test.ContinueStreamRequest} msg The msg instance to transform.
  * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.ContinueStreamRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
@@ -639,6 +646,7 @@ proto.improbable.grpcweb.test.ContinueStreamRequest.prototype.serializeBinary = 
  * format), writing to the given BinaryWriter.
  * @param {!proto.improbable.grpcweb.test.ContinueStreamRequest} message
  * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.ContinueStreamRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
@@ -710,6 +718,7 @@ proto.improbable.grpcweb.test.CheckStreamClosedRequest.prototype.toObject = func
  *     http://goto/soy-param-migration
  * @param {!proto.improbable.grpcweb.test.CheckStreamClosedRequest} msg The msg instance to transform.
  * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.CheckStreamClosedRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
@@ -779,6 +788,7 @@ proto.improbable.grpcweb.test.CheckStreamClosedRequest.prototype.serializeBinary
  * format), writing to the given BinaryWriter.
  * @param {!proto.improbable.grpcweb.test.CheckStreamClosedRequest} message
  * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.CheckStreamClosedRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
@@ -850,6 +860,7 @@ proto.improbable.grpcweb.test.CheckStreamClosedResponse.prototype.toObject = fun
  *     http://goto/soy-param-migration
  * @param {!proto.improbable.grpcweb.test.CheckStreamClosedResponse} msg The msg instance to transform.
  * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.CheckStreamClosedResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
@@ -919,6 +930,7 @@ proto.improbable.grpcweb.test.CheckStreamClosedResponse.prototype.serializeBinar
  * format), writing to the given BinaryWriter.
  * @param {!proto.improbable.grpcweb.test.CheckStreamClosedResponse} message
  * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.improbable.grpcweb.test.CheckStreamClosedResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;

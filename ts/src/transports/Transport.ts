@@ -3,6 +3,7 @@ import fetchRequest from "./fetch";
 import xhrRequest from "./xhr";
 import mozXhrRequest from "./mozXhr";
 import httpNodeTransport from "./nodeHttp";
+import websocketRequest from "./websocket";
 
 declare const Response: any;
 declare const Headers: any;
@@ -66,24 +67,27 @@ export class DefaultTransportFactory {
   }
 
   static detectTransport() {
-    if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
-      return fetchRequest;
-    }
+    console.log("detectTransport");
+    return websocketRequest;
 
-    if (typeof XMLHttpRequest !== "undefined") {
-      if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
-        return mozXhrRequest;
-      }
-
-      if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
-        return xhrRequest;
-      }
-    }
-
-    if (typeof module !== "undefined" && module.exports) {
-      return httpNodeTransport;
-    }
-
-    throw new Error("No suitable transport found for gRPC-Web");
+    // if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
+    //   return fetchRequest;
+    // }
+    //
+    // if (typeof XMLHttpRequest !== "undefined") {
+    //   if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
+    //     return mozXhrRequest;
+    //   }
+    //
+    //   if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
+    //     return xhrRequest;
+    //   }
+    // }
+    //
+    // if (typeof module !== "undefined" && module.exports) {
+    //   return httpNodeTransport;
+    // }
+    //
+    // throw new Error("No suitable transport found for gRPC-Web");
   }
 }

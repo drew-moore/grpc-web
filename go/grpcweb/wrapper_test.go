@@ -63,7 +63,10 @@ func TestHttp1GrpcWebWrapperTestSuite(t *testing.T) {
 func (s *GrpcWebWrapperTestSuite) SetupSuite() {
 	var err error
 	grpcServer := grpc.NewServer()
-	testproto.RegisterTestServiceServer(grpcServer, &testServiceImpl{})
+	go func() {
+		time.Sleep(1 * time.Second)
+		testproto.RegisterTestServiceServer(grpcServer, &testServiceImpl{})
+	}()
 	grpclog.SetLogger(log.New(os.Stderr, "grpc: ", log.LstdFlags))
 	wrappedServer := grpcweb.WrapServer(grpcServer)
 
@@ -87,7 +90,7 @@ func (s *GrpcWebWrapperTestSuite) SetupSuite() {
 	go func() {
 		httpServer.Serve(s.listener)
 	}()
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(2 * time.Second)
 }
 
 func (s *GrpcWebWrapperTestSuite) ctxForTest() context.Context {

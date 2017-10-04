@@ -11,9 +11,11 @@
     "build": "npm run build:proto && npm run build:testserver && npm run build:ts && npm run build:node",
     "lint": "tslint -c ./ts/tslint.json ./ts/src/**/*.ts",
     "test": "npm run build && npm run test:node && npm run test:browser",
-    "test:browser": "./run-testserver.sh karma start ./karma.conf.ts --single-run",
+    "test:karma-single-run": "karma start ./karma.conf.ts --single-run",
+    "test:karma-dev": "karma start ./karma.conf.ts",
+    "test:browser": "./run-testserver.sh npm run test:karma-single-run",
     "test:node": "./run-testserver.sh jasmine ts/build-node/test/ts/node-src/node.spec.js",
-    "test:dev": "npm run build && ./run-testserver.sh karma start ./karma.conf.ts"
+    "test:dev": "npm run build && ./run-testserver.sh npm run test:karma-dev"
   },
   "license": "none",
   "dependencies": {

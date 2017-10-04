@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"fmt"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 )
@@ -55,11 +56,16 @@ func WrapServer(server *grpc.Server, options ...Option) *WrappedGrpcServer {
 //
 // You can control the CORS behaviour using `With*` options in the WrapServer function.
 func (w *WrappedGrpcServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	if w.IsAcceptableGrpcCorsRequest(req) || w.IsGrpcWebRequest(req) {
-		w.corsWrapper.Handler(http.HandlerFunc(w.HandleGrpcWebRequest)).ServeHTTP(resp, req)
-		return
-	}
-	w.server.ServeHTTP(resp, req)
+	fmt.Println("req", req)
+
+	NewWebSocketWrapper(resp, req, w)
+
+	fmt.Println("After wrapper")
+	//if w.IsAcceptableGrpcCorsRequest(req) || w.IsGrpcWebRequest(req) {
+	//	w.corsWrapper.Handler(http.HandlerFunc(w.HandleGrpcWebRequest)).ServeHTTP(resp, req)
+	//	return
+	//}
+	//w.server.ServeHTTP(resp, req)
 }
 
 // HandleGrpcWebRequest takes a HTTP request that is assumed to be a gRPC-Web request and wraps it with a compatibility

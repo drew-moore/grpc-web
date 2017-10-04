@@ -11,14 +11,14 @@ import (
 
 	"fmt"
 
-	testproto "github.com/improbable-eng/grpc-web/test/go/_proto/improbable/grpcweb/test"
+	"crypto/tls"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	testproto "github.com/improbable-eng/grpc-web/test/go/_proto/improbable/grpcweb/test"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/transport"
-	"crypto/tls"
 	"sync"
 )
 
@@ -58,14 +58,14 @@ func main() {
 		Addr:    fmt.Sprintf(":%d", *http1Port),
 		Handler: http.HandlerFunc(handler),
 	}
-	http1Server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}// Disable HTTP2
+	http1Server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){} // Disable HTTP2
 	http1EmptyServer := http.Server{
 		Addr: fmt.Sprintf(":%d", *http1EmptyPort),
 		Handler: http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 			emptyHandler(res, req)
 		}),
 	}
-	http1EmptyServer.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}// Disable HTTP2
+	http1EmptyServer.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){} // Disable HTTP2
 
 	http2Server := http.Server{
 		Addr:    fmt.Sprintf(":%d", *http2Port),
@@ -117,16 +117,17 @@ func (s *testSrv) PingEmpty(ctx context.Context, _ *google_protobuf.Empty) (*tes
 }
 
 func (s *testSrv) Ping(ctx context.Context, ping *testproto.PingRequest) (*testproto.PingResponse, error) {
+	fmt.Println("GOT PING")
 	if ping.GetCheckMetadata() {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok || md["headertestkey1"][0] != "ClientValue1" {
 			return nil, grpc.Errorf(codes.InvalidArgument, "Metadata was invalid")
 		}
 	}
-	if (ping.GetSendHeaders()) {
+	if ping.GetSendHeaders() {
 		grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "ServerValue1", "HeaderTestKey2", "ServerValue2"))
 	}
-	if (ping.GetSendTrailers()) {
+	if ping.GetSendTrailers() {
 		grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "ServerValue1", "TrailerTestKey2", "ServerValue2"))
 	}
 	return &testproto.PingResponse{Value: ping.Value, Counter: 252}, nil
@@ -139,10 +140,10 @@ func (s *testSrv) PingError(ctx context.Context, ping *testproto.PingRequest) (*
 		return nil, grpc.Errorf(codes.Unavailable, "You got closed. You probably won't see this error")
 
 	}
-	if (ping.GetSendHeaders()) {
+	if ping.GetSendHeaders() {
 		grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "ServerValue1", "HeaderTestKey2", "ServerValue2"))
 	}
-	if (ping.GetSendTrailers()) {
+	if ping.GetSendTrailers() {
 		grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "ServerValue1", "TrailerTestKey2", "ServerValue2"))
 	}
 	return nil, grpc.Errorf(codes.Code(ping.ErrorCodeReturned), "Intentionally returning error for PingError")
@@ -174,10 +175,10 @@ func (s *testSrv) CheckStreamClosed(ctx context.Context, req *testproto.CheckStr
 }
 
 func (s *testSrv) PingList(ping *testproto.PingRequest, stream testproto.TestService_PingListServer) error {
-	if (ping.GetSendHeaders()) {
+	if ping.GetSendHeaders() {
 		stream.SendHeader(metadata.Pairs("HeaderTestKey1", "ServerValue1", "HeaderTestKey2", "ServerValue2"))
 	}
-	if (ping.GetSendTrailers()) {
+	if ping.GetSendTrailers() {
 		stream.SetTrailer(metadata.Pairs("TrailerTestKey1", "ServerValue1", "TrailerTestKey2", "ServerValue2"))
 	}
 	if ping.FailureType == testproto.PingRequest_DROP {
@@ -205,7 +206,7 @@ func (s *testSrv) PingList(ping *testproto.PingRequest, stream testproto.TestSer
 
 	for i := int32(0); i < ping.ResponseCount; i++ {
 		if i != 0 && useChannel {
-			shouldContinue := <- channel
+			shouldContinue := <-channel
 			if !shouldContinue {
 				return grpc.Errorf(codes.OK, "stream was cancelled by side-channel")
 			}
@@ -221,7 +222,7 @@ func (s *testSrv) PingList(ping *testproto.PingRequest, stream testproto.TestSer
 		if !ok {
 			return grpc.Errorf(codes.Internal, "lowLevelServerStream does not exist in context")
 		}
-		zeroBytes := make([]byte,0)
+		zeroBytes := make([]byte, 0)
 		lowLevelServerStream.ServerTransport().Write(lowLevelServerStream, zeroBytes, zeroBytes, &transport.Options{
 			Delay: false,
 		})

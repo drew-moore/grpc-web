@@ -58,6 +58,7 @@ export class ChunkParser{
   position: number = 0;
 
   parse(bytes: Uint8Array, flush?: boolean): Chunk[] {
+    console.log("parse", bytes);
     if (bytes.length === 0 && flush) {
       return [];
     }
