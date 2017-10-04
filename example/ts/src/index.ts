@@ -1,4 +1,4 @@
-import {grpc, Code, Metadata} from "grpc-web-client";
+import {grpc, Code, Metadata} from "../../../ts/src/index";
 import {BookService} from "../_proto/examplecom/library/book_service_pb_service";
 import {QueryBooksRequest, Book, GetBookRequest} from "../_proto/examplecom/library/book_service_pb";
 
@@ -29,17 +29,17 @@ getBook();
 function queryBooks() {
   const queryBooksRequest = new QueryBooksRequest();
   queryBooksRequest.setAuthorPrefix("Geor");
-  grpc.invoke(BookService.QueryBooks, {
-    request: queryBooksRequest,
+  const client = grpc.client(BookService.QueryBooks, {
     host: host,
-    onHeaders: (headers: Metadata) => {
-      console.log("queryBooks.onHeaders", headers);
-    },
-    onMessage: (message: Book) => {
-      console.log("queryBooks.onMessage", message.toObject());
-    },
-    onEnd: (code: Code, msg: string, trailers: Metadata) => {
-      console.log("queryBooks.onEnd", code, msg, trailers);
-    }
   });
+  client.onHeaders((headers: Metadata) => {
+    console.log("queryBooks.onHeaders", headers);
+  });
+  client.onMessage((message: Book) => {
+    console.log("queryBooks.onMessage", message.toObject());
+  });
+  client.onEnd((code: Code, msg: string, trailers: Metadata) => {
+    console.log("queryBooks.onEnd", code, msg, trailers);
+  });
+  client.start();
 }

@@ -1,31 +1,27 @@
-import {Metadata} from "../grpc";
+import {Metadata} from "../metadata";
 import fetchRequest from "./fetch";
 import xhrRequest from "./xhr";
 import mozXhrRequest from "./mozXhr";
-import httpNodeTransport from "./nodeHttp";
+import httpNodeRequest from "./nodeHttp";
+import {MethodDefinition} from "../service";
+import {ProtobufMessage} from "../message";
 
 declare const Response: any;
 declare const Headers: any;
 
-export {
-  fetchRequest,
-  mozXhrRequest,
-  xhrRequest
-}
-
-export interface CancelFunc {
-  (): void
-}
-
 export interface Transport {
-  (options: TransportOptions): CancelFunc;
+  sendMessage(msgBytes: ArrayBufferView): void
+  cancel(): void
+  start(metadata: Metadata): void
+}
+
+export interface TransportConstructor {
+  (options: TransportOptions): Transport;
 }
 
 export type TransportOptions = {
   debug: boolean,
   url: string,
-  headers: Metadata,
-  body: ArrayBufferView,
   onHeaders: (headers: Metadata, status: number) => void,
   onChunk: (chunkBytes: Uint8Array, flush?: boolean) => void,
   onEnd: (err?: Error) => void,
@@ -38,8 +34,8 @@ function getXHR () {
   if (XMLHttpRequest) {
     xhr = new XMLHttpRequest();
     try {
-      xhr.open('GET', 'https://localhost')
-    } catch(e) {}
+      xhr.open("GET", "https://localhost")
+    } catch (e) {}
   }
   return xhr
 }
@@ -56,34 +52,42 @@ function xhrSupportsResponseType(type: string) {
   return false
 }
 
-export class DefaultTransportFactory {
-  static selected: Transport;
-  static getTransport(): Transport {
-    if (!this.selected) {
-      this.selected = DefaultTransportFactory.detectTransport();
-    }
-    return this.selected;
+export interface TransportFactory {
+  (m: MethodDefinition<ProtobufMessage, ProtobufMessage>): TransportConstructor | Error;
+}
+
+let selectedTransport: TransportConstructor;
+export function DefaultTransportFactory(methodDescriptor: MethodDefinition<ProtobufMessage, ProtobufMessage>): TransportConstructor | Error {
+  // The transports provided by DefaultTransportFactory do not support client-streaming
+  if (methodDescriptor.requestStream) {
+    return new Error("No transport available for client-streaming (requestStream) method");
   }
 
-  static detectTransport() {
-    if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
-      return fetchRequest;
-    }
-
-    if (typeof XMLHttpRequest !== "undefined") {
-      if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
-        return mozXhrRequest;
-      }
-
-      if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
-        return xhrRequest;
-      }
-    }
-
-    if (typeof module !== "undefined" && module.exports) {
-      return httpNodeTransport;
-    }
-
-    throw new Error("No suitable transport found for gRPC-Web");
+  if (!selectedTransport) {
+    selectedTransport = detectTransport();
   }
+
+  return selectedTransport;
+}
+
+function detectTransport(): TransportConstructor {
+  if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
+    return fetchRequest;
+  }
+
+  if (typeof XMLHttpRequest !== "undefined") {
+    if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
+      return mozXhrRequest;
+    }
+
+    if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
+      return xhrRequest;
+    }
+  }
+
+  if (typeof module !== "undefined" && module.exports) {
+    return httpNodeRequest;
+  }
+
+  throw new Error("No suitable transport found for gRPC-Web");
 }

@@ -39,6 +39,22 @@ export namespace TestService {
     static readonly requestType = improbable_grpcweb_test_test_pb.PingRequest;
     static readonly responseType = improbable_grpcweb_test_test_pb.PingResponse;
   }
+  export class PingPongBidi {
+    static readonly methodName = "PingPongBidi";
+    static readonly service = TestService;
+    static readonly requestStream = true;
+    static readonly responseStream = true;
+    static readonly requestType = improbable_grpcweb_test_test_pb.PingRequest;
+    static readonly responseType = improbable_grpcweb_test_test_pb.PingResponse;
+  }
+  export class PingStream {
+    static readonly methodName = "PingStream";
+    static readonly service = TestService;
+    static readonly requestStream = true;
+    static readonly responseStream = false;
+    static readonly requestType = improbable_grpcweb_test_test_pb.PingRequest;
+    static readonly responseType = improbable_grpcweb_test_test_pb.PingResponse;
+  }
 }
 export class TestUtilService {
   static serviceName = "improbable.grpcweb.test.TestUtilService";
