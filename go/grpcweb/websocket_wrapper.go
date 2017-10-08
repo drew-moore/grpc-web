@@ -18,6 +18,7 @@ type WebSocketWrapper struct {
 }
 
 type WebSocketResponseWriter struct {
+	writtenHeaders  bool
 	wsConn          *websocket.Conn
 	headers         http.Header
 	closeNotifyChan chan bool
@@ -25,6 +26,7 @@ type WebSocketResponseWriter struct {
 
 func newWebSocketResponseWriter(wsConn *websocket.Conn) *WebSocketResponseWriter {
 	return &WebSocketResponseWriter{
+		writtenHeaders:  false,
 		headers:         make(http.Header),
 		wsConn:          wsConn,
 		closeNotifyChan: make(chan bool),
@@ -36,7 +38,10 @@ func (w *WebSocketResponseWriter) Header() http.Header {
 }
 
 func (w *WebSocketResponseWriter) Write(b []byte) (int, error) {
-	fmt.Println("RespWrite", b, string(b))
+	fmt.Println("RespWrite", b, string(b), w.writtenHeaders)
+	if !w.writtenHeaders {
+		w.WriteHeader(http.StatusOK)
+	}
 	return w.wsConn.Write(b)
 }
 
@@ -52,6 +57,7 @@ func (w *WebSocketResponseWriter) writeHeaderFrame(headers http.Header) {
 }
 
 func (w *WebSocketResponseWriter) WriteHeader(code int) {
+	w.writtenHeaders = true
 	fmt.Println("RespWriteHeader", code)
 	w.writeHeaderFrame(w.headers)
 	return

@@ -216,7 +216,7 @@ export namespace grpc {
     }
 
     function rawOnMessage(res: TResponse) {
-      props.debug && debug("res", res.toObject());
+      props.debug && debug("rawOnMessage", res.toObject());
       if (completed) return;
       onMessageCallbacks.forEach(callback => {
         detach(() => {
