@@ -1,11 +1,11 @@
 import {Metadata} from "../grpc";
-import {CancelFunc, TransportOptions} from "./Transport";
+import {TransportInterface, TransportOptions} from "./Transport";
 import {debug} from "../debug";
 import detach from "../detach";
 
 /* xhrRequest uses XmlHttpRequest with overrideMimeType combined with a byte decoding method that decodes the UTF-8
  * text response to bytes. */
-export default function xhrRequest(options: TransportOptions): CancelFunc {
+export default function xhrRequest(options: TransportOptions): TransportInterface {
   options.debug && debug("xhrRequest", options);
   const xhr = new XMLHttpRequest();
   let index = 0;
@@ -54,11 +54,19 @@ export default function xhrRequest(options: TransportOptions): CancelFunc {
       options.onEnd(err.error);
     });
   });
-  xhr.send(options.body);
-  return () => {
-    options.debug && debug("xhrRequest.abort");
-    xhr.abort();
-  }
+
+  return {
+    sendMessage: (msgBytes: ArrayBufferView) => {
+      xhr.send(msgBytes);
+    },
+    start: () => {
+      // no-op
+    },
+    cancel: () => {
+      options.debug && debug("xhrRequest.abort");
+      xhr.abort();
+    }
+  };
 }
 
 function codePointAtPolyfill(str: string, index: number) {

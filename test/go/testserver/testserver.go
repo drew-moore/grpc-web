@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/transport"
+	"io"
 	"sync"
 )
 
@@ -228,4 +229,35 @@ func (s *testSrv) PingList(ping *testproto.PingRequest, stream testproto.TestSer
 		})
 	}
 	return nil
+}
+
+func (s *testSrv) PingPongBidi(stream testproto.TestService_PingPongBidiServer) error {
+	log.Println("Started stream")
+	for {
+		in, err := stream.Recv()
+		log.Println("Received value")
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if in.GetSendHeaders() {
+			stream.SendHeader(metadata.Pairs("HeaderTestKey1", "ServerValue1", "HeaderTestKey2", "ServerValue2"))
+		}
+		if in.GetSendTrailers() {
+			stream.SetTrailer(metadata.Pairs("TrailerTestKey1", "ServerValue1", "TrailerTestKey2", "ServerValue2"))
+		}
+		if in.FailureType == testproto.PingRequest_CODE {
+			if in.ErrorCodeReturned == 0 {
+				return nil
+			} else {
+				return grpc.Errorf(codes.Code(in.ErrorCodeReturned), "Intentionally returning status code: %d", in.ErrorCodeReturned)
+			}
+		}
+		log.Println("Got ", in)
+		stream.Send(&testproto.PingResponse{
+			Value: in.Value,
+		})
+	}
 }

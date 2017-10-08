@@ -1,12 +1,12 @@
 import {Metadata} from "../grpc";
-import {CancelFunc, TransportOptions} from "./Transport";
+import {TransportInterface, TransportOptions} from "./Transport";
 import {debug} from "../debug";
 import detach from "../detach";
 
 /* mozXhrRequest uses XmlHttpRequest with responseType "moz-chunked-arraybuffer" to support binary streaming in Firefox.
  * Firefox's Fetch as of version 52 does not implement a ReadableStream interface. moz-chunked-arraybuffer enables
  * receiving byte chunks without buffering the entire response as the xhrRequest transport does. */
-export default function mozXhrRequest(options: TransportOptions): CancelFunc {
+export default function mozXhrRequest(options: TransportOptions): TransportInterface {
   options.debug && debug("mozXhrRequest", options);
   const xhr = new XMLHttpRequest();
 
@@ -48,9 +48,18 @@ export default function mozXhrRequest(options: TransportOptions): CancelFunc {
       options.onEnd(err.error);
     });
   });
-  xhr.send(options.body);
-  return () => {
-    options.debug && debug("mozXhrRequest.abort");
-    xhr.abort();
-  }
+
+
+  return {
+    sendMessage: (msgBytes: ArrayBufferView) => {
+      xhr.send(msgBytes);
+    },
+    start: () => {
+      // no-op
+    },
+    cancel: () => {
+      options.debug && debug("mozXhrRequest.abort");
+      xhr.abort();
+    }
+  };
 }

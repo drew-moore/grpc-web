@@ -1,58 +1,33 @@
 import {Metadata} from "../grpc";
-import {CancelFunc, TransportOptions} from "./Transport";
+import {TransportInterface, TransportOptions} from "./Transport";
 import {debug} from "../debug";
 import detach from "../detach";
 
 /* websocketRequest uses Websockets */
-export default function websocketRequest(options: TransportOptions): CancelFunc {
-  let cancelled = false;
-  let reader: ReadableStreamReader;
-  options.debug && debug("websocketRequest", options);
-  function pump(readerArg: ReadableStreamReader, res: Response): Promise<void|Response> {
-    reader = readerArg;
-    if (cancelled) {
-      // If the request was cancelled before the first pump then cancel it here
-      options.debug && debug("websocketRequest.pump.cancel");
-      return reader.cancel();
-    }
-    return reader.read()
-      .then((result: { done: boolean, value: Uint8Array }) => {
-        if (result.done) {
-          detach(() => {
-            options.onEnd();
-          });
-          return res;
-        }
-        detach(() => {
-          options.onChunk(result.value);
-        });
-        return pump(reader, res);
-      });
-  }
-
+export default function websocketRequest(options: TransportOptions): TransportInterface {
   let httpAddress = `${options.url}`;
   httpAddress = httpAddress.substr(8);
 
   const webSocketAddress = `wss://${httpAddress}`;
   console.log("webSocketAddress", webSocketAddress);
 
+  const sendQueue: Array<ArrayBufferView> = [];
   const ws = new WebSocket(webSocketAddress);
   ws.binaryType = "arraybuffer";
   ws.onopen = function () {
     console.log("websocket.onopen");
-    let headersString = "";
-    options.headers.forEach((key, values) => {
-      headersString += `${key}: ${values.join(",")}\r\n`
-    });
-    ws.send(new TextEncoder().encode(headersString))
+    ws.send(frameHeaders(options.headers));
 
-    setTimeout(() => {
-      ws.send(options.body)
-    }, 1250);
+    sendQueue.forEach(toSend => {
+      ws.send(toSend);
+    });
   };
 
   ws.onclose = function () {
     console.log("WebSocket Closed");
+    detach(() => {
+      options.onEnd();
+    });
   };
 
   ws.onerror = function (error) {
@@ -60,15 +35,42 @@ export default function websocketRequest(options: TransportOptions): CancelFunc 
   };
 
   ws.onmessage = function (e) {
-    options.onChunk(new Uint8Array(e.data));
+    const asUint8Array = new Uint8Array(e.data);
+    // const asString = new TextDecoder("utf-8").decode(asUint8Array);
+    // console.log("asUint8Array", asUint8Array);
+    // console.log("asString", asString);
+    detach(() => {
+      options.onChunk(asUint8Array);
+    });
   };
 
-  return () => {
-    if (reader) {
-      // If the reader has already been received in the pump then it can be cancelled immediately
-      options.debug && debug("websocketRequest.abort.cancel");
-      reader.cancel();
+  return {
+    sendMessage: (msgBytes: ArrayBufferView) => {
+      if (ws.readyState === ws.CONNECTING) {
+        console.log("PUSHING TO SENDQUEUE");
+        sendQueue.push(msgBytes);
+      } else {
+        ws.send(msgBytes)
+      }
+    },
+    start: () => {},
+    cancel: () => {
+      options.debug && debug("websocket.abort");
+      ws.close();
     }
-    cancelled = true;
-  }
+  };
+}
+
+function frameHeaders(headers: Metadata): Uint8Array {
+  let asString = '';
+  headers.forEach((key, values) => {
+    asString += `${key}: ${values.join(', ')}\r\n`;
+  });
+  const bytes = new TextEncoder().encode(asString);
+  const frame = new ArrayBuffer(bytes.byteLength + 5);
+  const dataview = new DataView(frame, 0, 5);
+  dataview.setUint32(1, bytes.length, false /* big endian */);
+  dataview.setUint8(0, 128);
+  new Uint8Array(frame, 5).set(bytes);
+  return new Uint8Array(frame);
 }

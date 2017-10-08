@@ -14,19 +14,20 @@ export {
   xhrRequest
 }
 
-export interface CancelFunc {
-  (): void
+export interface TransportInterface {
+  sendMessage(msgBytes: ArrayBufferView): void
+  cancel(): void
+  start(): void
 }
 
 export interface Transport {
-  (options: TransportOptions): CancelFunc;
+  (options: TransportOptions): TransportInterface;
 }
 
 export type TransportOptions = {
   debug: boolean,
   url: string,
   headers: Metadata,
-  body: ArrayBufferView,
   onHeaders: (headers: Metadata, status: number) => void,
   onChunk: (chunkBytes: Uint8Array, flush?: boolean) => void,
   onEnd: (err?: Error) => void,
@@ -68,26 +69,28 @@ export class DefaultTransportFactory {
 
   static detectTransport() {
     console.log("detectTransport");
-    return websocketRequest;
+    if (2 + 2 === 4) {
+      return websocketRequest;
+    }
 
-    // if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
-    //   return fetchRequest;
-    // }
-    //
-    // if (typeof XMLHttpRequest !== "undefined") {
-    //   if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
-    //     return mozXhrRequest;
-    //   }
-    //
-    //   if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
-    //     return xhrRequest;
-    //   }
-    // }
-    //
-    // if (typeof module !== "undefined" && module.exports) {
-    //   return httpNodeTransport;
-    // }
-    //
-    // throw new Error("No suitable transport found for gRPC-Web");
+    if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
+      return fetchRequest;
+    }
+
+    if (typeof XMLHttpRequest !== "undefined") {
+      if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
+        return mozXhrRequest;
+      }
+
+      if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
+        return xhrRequest;
+      }
+    }
+
+    if (typeof module !== "undefined" && module.exports) {
+      return httpNodeTransport;
+    }
+
+    throw new Error("No suitable transport found for gRPC-Web");
   }
 }

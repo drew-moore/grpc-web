@@ -156,45 +156,72 @@ export namespace grpc {
     return grpc.invoke(methodDescriptor, rpcOpts);
   }
 
-  export function invoke<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: RpcOptions<TRequest, TResponse>): Request {
+  export type Client<TRequest extends jspb.Message, TResponse extends jspb.Message> = {
+    start: () => void
+    close: () => void
+    onHeaders: (callback: (headers: Metadata) => void) => void
+    onMessage: (callback: (res: TResponse) => void) => void
+    send: (msg: TRequest) => void
+    onEnd: (callback: (code: Code, message: string, trailers: Metadata) => void) => void
+  }
+
+  export type ClientRpcOptions<TRequest extends jspb.Message, TResponse extends jspb.Message> = {
+    host: string,
+    metadata?: Metadata.ConstructorArg,
+    transport?: Transport,
+    debug?: boolean,
+  }
+
+  export function client<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: ClientRpcOptions<TRequest, TResponse>): Client<TRequest, TResponse> {
     const requestHeaders = new Metadata(props.metadata ? props.metadata : {});
     requestHeaders.set("content-type", "application/grpc-web+proto");
     requestHeaders.set("x-grpc-web", "1"); // Required for CORS handling
 
-    const framedRequest = frameRequest(props.request);
+    const onHeadersCallbacks: Array<(headers: Metadata) => void> = [];
+    const onMessageCallbacks: Array<(res: TResponse) => void> = [];
+    const onEndCallbacks: Array<(code: Code, message: string, trailers: Metadata) => void> = [];
 
     let completed = false;
     function rawOnEnd(code: Code, message: string, trailers: Metadata) {
+      props.debug && debug("rawOnEnd", code, message, trailers);
       if (completed) return;
       completed = true;
-      detach(() => {
-        props.onEnd(code, message, trailers);
+
+      onEndCallbacks.forEach(callback => {
+        detach(() => {
+          callback(code, message, trailers);
+        });
       });
     }
 
     function rawOnHeaders(headers: Metadata) {
+      props.debug && debug("rawOnHeaders", headers);
       if (completed) return;
-      detach(() => {
-        if (props.onHeaders) {
-          props.onHeaders(headers);
-        }
+      onHeadersCallbacks.forEach(callback => {
+        detach(() => {
+          callback(headers);
+        });
       });
     }
 
     function rawOnError(code: Code, msg: string) {
+      props.debug && debug("rawOnError", code, msg);
       if (completed) return;
       completed = true;
-      detach(() => {
-        props.onEnd(code, msg, new Metadata());
+      onEndCallbacks.forEach(callback => {
+        detach(() => {
+          callback(code, msg, new Metadata());
+        });
       });
     }
 
     function rawOnMessage(res: TResponse) {
+      props.debug && debug("res", res.toObject());
       if (completed) return;
-      detach(() => {
-        if (props.onMessage) {
-          props.onMessage(res);
-        }
+      onMessageCallbacks.forEach(callback => {
+        detach(() => {
+          callback(res);
+        });
       });
     }
 
@@ -203,16 +230,14 @@ export namespace grpc {
     let responseTrailers: Metadata;
     const parser = new ChunkParser();
 
-
     let transport = props.transport;
     if (!transport) {
       transport = DefaultTransportFactory.getTransport();
     }
-    const cancelFunc = transport({
+    const transportObj = transport({
       debug: props.debug || false,
       url: `${props.host}/${methodDescriptor.service.serviceName}/${methodDescriptor.methodName}`,
       headers: requestHeaders,
-      body: framedRequest,
       onHeaders: (headers: Metadata, status: number) => {
         props.debug && debug("onHeaders", headers, status);
 
@@ -258,8 +283,13 @@ export namespace grpc {
             const deserialized = methodDescriptor.responseType.deserializeBinary(d.data!);
             rawOnMessage(deserialized);
           } else if (d.chunkType === ChunkType.TRAILERS) {
-            responseTrailers = new Metadata(d.trailers);
-            props.debug && debug("onChunk.trailers", responseTrailers);
+            if (!responseHeaders) {
+              responseHeaders = new Metadata(d.trailers);
+              rawOnHeaders(responseHeaders);
+            } else {
+              responseTrailers = new Metadata(d.trailers);
+              props.debug && debug("onChunk.trailers", responseTrailers);
+            }
           }
         });
       },
@@ -306,17 +336,59 @@ export namespace grpc {
       }
     });
 
-    const requestObj = {
-      abort() {
+    return {
+      onHeaders: callback => {
+        onHeadersCallbacks.push(callback);
+      },
+      onEnd: callback => {
+        onEndCallbacks.push(callback);
+      },
+      onMessage: callback => {
+        onMessageCallbacks.push(callback);
+      },
+      close: () => {
         if (!aborted) {
           aborted = true;
           props.debug && debug("request.abort aborting request");
-          cancelFunc();
+          transportObj.cancel();
         }
+      },
+      start: () => {
+        transportObj.start();
+      },
+      send: (msg: TRequest) => {
+        const msgBytes = frameRequest(msg);
+        transportObj.sendMessage(msgBytes);
+      },
+    };
+  }
 
+  export function invoke<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: RpcOptions<TRequest, TResponse>): Request {
+
+    const client = grpc.client(methodDescriptor, {
+      host: props.host,
+      metadata: props.metadata,
+      transport: props.transport,
+      debug: props.debug,
+    });
+
+    if (props.onHeaders) {
+      client.onHeaders(props.onHeaders);
+    }
+    if (props.onMessage) {
+      client.onMessage(props.onMessage);
+    }
+    if (props.onEnd) {
+      client.onEnd(props.onEnd);
+    }
+
+    client.start();
+    client.send(props.request);
+
+    return {
+      abort: () => {
+        client.close();
       }
     };
-
-    return requestObj;
   }
 }

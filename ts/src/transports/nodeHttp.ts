@@ -1,11 +1,11 @@
 import * as http from 'http';
 import * as https from 'https';
 import * as url from 'url';
-import {CancelFunc, TransportOptions} from "./Transport";
+import {TransportInterface, TransportOptions} from "./Transport";
 import {Metadata} from "../grpc";
 
 /* nodeHttpRequest uses the node http and https modules */
-export default function nodeHttpRequest(options: TransportOptions): CancelFunc {
+export default function nodeHttpRequest(options: TransportOptions): TransportInterface {
   options.debug && console.log('httpNodeTransport', options);
 
   const headers: { [key: string]: string } = {};
@@ -48,13 +48,20 @@ export default function nodeHttpRequest(options: TransportOptions): CancelFunc {
     options.debug && console.log('httpNodeTransport.error', err);
     options.onEnd(err);
   });
-  request.write(toBuffer(options.body));
-  request.end();
 
-  return () => {
-    options.debug && console.log("httpNodeTransport.abort");
-    request.abort();
-  }
+  return {
+    sendMessage: (msgBytes: ArrayBufferView) => {
+      request.write(toBuffer(msgBytes));
+      request.end();
+    },
+    start: () => {
+      // no-op
+    },
+    cancel: () => {
+      options.debug && console.log("httpNodeTransport.abort");
+      request.abort();
+    }
+  };
 }
 
 function toArrayBuffer(buf: Buffer): Uint8Array {
