@@ -45,6 +45,7 @@ import {
   Code,
   Request,
   BrowserHeaders,
+  WebsocketTransportFactory,
 } from "../../../ts/src/index";
 import UnaryMethodDefinition = grpc.UnaryMethodDefinition;
 
@@ -60,7 +61,6 @@ import {
 } from "../_proto/improbable/grpcweb/test/test_pb";
 import {FailService, TestService, TestUtilService} from "../_proto/improbable/grpcweb/test/test_pb_service";
 import {UncaughtExceptionListener} from "./util";
-import FailureType = PingRequest.FailureType;
 
 function headerTrailerCombos(cb: (withHeaders: boolean, withTrailers: boolean, name: string) => void) {
   cb(false, false, " - no headers - no trailers");
@@ -100,7 +100,6 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
           request: ping,
           host: testHostUrl,
           onHeaders: (headers: BrowserHeaders) => {
-            console.log("Ping.onHeaders", headers);
             DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
             if (withHeaders) {
@@ -109,14 +108,12 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
             }
           },
           onMessage: (message: PingResponse) => {
-            console.log("Ping.onMessage", message.toObject());
             didGetOnMessage = true;
             assert.ok(message instanceof PingResponse);
             assert.deepEqual(message.getValue(), "hello world");
             assert.deepEqual(message.getCounter(), 252);
           },
           onEnd: (status: Code, statusMessage: string, trailers: BrowserHeaders) => {
-            console.log("Ping.onEnd", status, statusMessage, trailers);
             DEBUG && debug("status", status, "statusMessage", statusMessage);
             assert.strictEqual(status, Code.OK, "expected OK (0)");
             assert.strictEqual(statusMessage, undefined, "expected no message");
@@ -529,7 +526,7 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
               DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
             }
           })
-        }, ".unary cannot be used with server-streaming methods. Use .invoke instead."
+        }, ".unary cannot be used with server-streaming methods. Use .invoke or .client instead."
       );
     });
 
@@ -872,8 +869,6 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
     headerTrailerCombos((withHeaders, withTrailers, name) => {
       it("should make a bidirectional request that is terminated by the client" + name, (done) => {
         let didGetOnHeaders = false;
-        let didGetOnMessage = false;
-
         let counter = 1;
         let lastMessage = `helloworld:${counter}`;
         const ping = new PingRequest();
@@ -884,9 +879,9 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
         const client = grpc.client(TestService.PingPongBidi, {
           debug: DEBUG,
           host: testHostUrl,
+          transportFactory: WebsocketTransportFactory,
         });
         client.onHeaders((headers: BrowserHeaders) => {
-          console.log("Ping.onHeaders", headers);
           DEBUG && debug("headers", headers);
           didGetOnHeaders = true;
           if (withHeaders) {
@@ -895,7 +890,6 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
           }
         });
         client.onMessage((message: PingResponse) => {
-          console.log("Ping.onMessage", message.toObject());
           assert.ok(message instanceof PingResponse);
           assert.deepEqual(message.getValue(), lastMessage);
 
@@ -935,9 +929,9 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
         const client = grpc.client(TestService.PingPongBidi, {
           debug: DEBUG,
           host: testHostUrl,
+          transportFactory: WebsocketTransportFactory,
         });
         client.onHeaders((headers: BrowserHeaders) => {
-          console.log("Ping.onHeaders", headers);
           DEBUG && debug("headers", headers);
           didGetOnHeaders = true;
           if (withHeaders) {
@@ -946,7 +940,6 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
           }
         });
         client.onMessage((message: PingResponse) => {
-          console.log("Ping.onMessage", message.toObject());
           assert.ok(message instanceof PingResponse);
           assert.deepEqual(message.getValue(), lastMessage);
 
@@ -964,7 +957,6 @@ function runTests({testHostUrl, corsHostUrl, unavailableHost, emptyHost}: TestCo
           }
         });
         client.onEnd((status: Code, statusMessage: string, trailers: BrowserHeaders) => {
-          console.log("Ping.onEnd", status, statusMessage, trailers);
           DEBUG && debug("status", status, "statusMessage", statusMessage);
           assert.strictEqual(status, Code.OK, "expected OK (0)");
           assert.strictEqual(statusMessage, undefined, "expected no message");

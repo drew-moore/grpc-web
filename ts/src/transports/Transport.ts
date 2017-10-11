@@ -2,17 +2,11 @@ import {Metadata} from "../grpc";
 import fetchRequest from "./fetch";
 import xhrRequest from "./xhr";
 import mozXhrRequest from "./mozXhr";
-import httpNodeTransport from "./nodeHttp";
+import httpNodeRequest from "./nodeHttp";
 import websocketRequest from "./websocket";
 
 declare const Response: any;
 declare const Headers: any;
-
-export {
-  fetchRequest,
-  mozXhrRequest,
-  xhrRequest
-}
 
 export interface TransportInterface {
   sendMessage(msgBytes: ArrayBufferView): void
@@ -58,39 +52,41 @@ function xhrSupportsResponseType(type: string) {
   return false
 }
 
-export class DefaultTransportFactory {
-  static selected: Transport;
-  static getTransport(): Transport {
-    if (!this.selected) {
-      this.selected = DefaultTransportFactory.detectTransport();
-    }
-    return this.selected;
+export interface TransportFactory {
+  (): Transport;
+}
+
+let selectedTransport: Transport;
+
+export function DefaultTransportFactory(): Transport {
+  if (!selectedTransport) {
+    selectedTransport = detectTransport();
+  }
+  return selectedTransport;
+}
+
+function detectTransport(): Transport {
+  if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
+    return fetchRequest;
   }
 
-  static detectTransport() {
-    console.log("detectTransport");
-    if (2 + 2 === 4) {
-      return websocketRequest;
+  if (typeof XMLHttpRequest !== "undefined") {
+    if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
+      return mozXhrRequest;
     }
 
-    if (typeof Response !== "undefined" && Response.prototype.hasOwnProperty("body") && typeof Headers === "function") {
-      return fetchRequest;
+    if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
+      return xhrRequest;
     }
-
-    if (typeof XMLHttpRequest !== "undefined") {
-      if (xhrSupportsResponseType("moz-chunked-arraybuffer")) {
-        return mozXhrRequest;
-      }
-
-      if (XMLHttpRequest.prototype.hasOwnProperty("overrideMimeType")) {
-        return xhrRequest;
-      }
-    }
-
-    if (typeof module !== "undefined" && module.exports) {
-      return httpNodeTransport;
-    }
-
-    throw new Error("No suitable transport found for gRPC-Web");
   }
+
+  if (typeof module !== "undefined" && module.exports) {
+    return httpNodeRequest;
+  }
+
+  throw new Error("No suitable transport found for gRPC-Web");
+}
+
+export function WebsocketTransportFactory(): Transport {
+  return websocketRequest;
 }

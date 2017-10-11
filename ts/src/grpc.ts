@@ -1,7 +1,7 @@
 import * as jspb from "google-protobuf";
 import {BrowserHeaders as Metadata} from "browser-headers";
 import {ChunkParser, Chunk, ChunkType} from "./ChunkParser";
-import {Transport, TransportOptions, DefaultTransportFactory} from "./transports/Transport";
+import {Transport, TransportOptions, DefaultTransportFactory, TransportFactory, WebsocketTransportFactory} from "./transports/Transport";
 import {debug} from "./debug";
 import detach from "./detach";
 import {Code} from "./Code";
@@ -9,6 +9,8 @@ import {Code} from "./Code";
 export {
   Metadata,
   Transport,
+  DefaultTransportFactory,
+  WebsocketTransportFactory,
   TransportOptions,
   Code,
 };
@@ -84,6 +86,7 @@ export namespace grpc {
     onMessage?: (res: TResponse) => void,
     onEnd: (code: Code, message: string, trailers: Metadata) => void,
     transport?: Transport,
+    transportFactory?: TransportFactory,
     debug?: boolean,
   }
 
@@ -101,6 +104,7 @@ export namespace grpc {
     metadata?: Metadata.ConstructorArg,
     onEnd: (output: UnaryOutput<TResponse>) => void,
     transport?: Transport,
+    transportFactory?: TransportFactory,
     debug?: boolean,
   }
 
@@ -127,7 +131,10 @@ export namespace grpc {
 
   export function unary<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends UnaryMethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: UnaryRpcOptions<M, TRequest, TResponse>): Request {
     if (methodDescriptor.responseStream) {
-      throw new Error(".unary cannot be used with server-streaming methods. Use .invoke instead.");
+      throw new Error(".unary cannot be used with server-streaming methods. Use .invoke or .client instead.");
+    }
+    if (methodDescriptor.requestStream) {
+      throw new Error(".unary cannot be used with client-streaming methods. Use .client instead.");
     }
     let responseHeaders: Metadata | null = null;
     let responseMessage: TResponse | null = null;
@@ -169,6 +176,7 @@ export namespace grpc {
     host: string,
     metadata?: Metadata.ConstructorArg,
     transport?: Transport,
+    transportFactory?: TransportFactory,
     debug?: boolean,
   }
 
@@ -232,7 +240,12 @@ export namespace grpc {
 
     let transport = props.transport;
     if (!transport) {
-      transport = DefaultTransportFactory.getTransport();
+      let transportFactory = props.transportFactory;
+      if (transportFactory) {
+        transport = transportFactory();
+      } else {
+        transport = DefaultTransportFactory();
+      }
     }
     const transportObj = transport({
       debug: props.debug || false,
@@ -364,11 +377,15 @@ export namespace grpc {
   }
 
   export function invoke<TRequest extends jspb.Message, TResponse extends jspb.Message, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: RpcOptions<TRequest, TResponse>): Request {
+    if (methodDescriptor.requestStream) {
+      throw new Error(".invoke cannot be used with client-streaming methods. Use .client instead.");
+    }
 
     const client = grpc.client(methodDescriptor, {
       host: props.host,
       metadata: props.metadata,
       transport: props.transport,
+      transportFactory: props.transportFactory,
       debug: props.debug,
     });
 

@@ -5,5 +5,7 @@ export {
   Code,
   Request,
   Transport,
+  DefaultTransportFactory,
+  WebsocketTransportFactory,
   TransportOptions,
 } from "./grpc";

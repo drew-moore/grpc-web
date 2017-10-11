@@ -3,7 +3,7 @@ import {TransportInterface, TransportOptions} from "./Transport";
 import {debug} from "../debug";
 import detach from "../detach";
 
-/* websocketRequest uses Websockets */
+/* websocketRequest uses Websockets and requires the server to enable experimental websocket support */
 export default function websocketRequest(options: TransportOptions): TransportInterface {
   let httpAddress = `${options.url}`;
   httpAddress = httpAddress.substr(8);
@@ -12,51 +12,52 @@ export default function websocketRequest(options: TransportOptions): TransportIn
   console.log("webSocketAddress", webSocketAddress);
 
   const sendQueue: Array<ArrayBufferView> = [];
-  const ws = new WebSocket(webSocketAddress);
-  ws.binaryType = "arraybuffer";
-  ws.onopen = function () {
-    console.log("websocket.onopen");
-    ws.send(frameHeaders(options.headers));
-
-    sendQueue.forEach(toSend => {
-      ws.send(toSend);
-    });
-  };
-
-  ws.onclose = function () {
-    console.log("WebSocket Closed");
-    detach(() => {
-      options.onEnd();
-    });
-  };
-
-  ws.onerror = function (error) {
-    console.log('WebSocket Error ' + error);
-  };
-
-  ws.onmessage = function (e) {
-    const asUint8Array = new Uint8Array(e.data);
-    // const asString = new TextDecoder("utf-8").decode(asUint8Array);
-    // console.log("asUint8Array", asUint8Array);
-    // console.log("asString", asString);
-    detach(() => {
-      options.onChunk(asUint8Array);
-    });
-  };
+  let ws: WebSocket;
 
   return {
     sendMessage: (msgBytes: ArrayBufferView) => {
-      if (ws.readyState === ws.CONNECTING) {
-        console.log("PUSHING TO SENDQUEUE");
+      if (!ws || ws.readyState === ws.CONNECTING) {
         sendQueue.push(msgBytes);
       } else {
         ws.send(msgBytes)
       }
     },
-    start: () => {},
+    start: () => {
+      ws = new WebSocket(webSocketAddress, ['grpc-websockets']);
+      ws.binaryType = "arraybuffer";
+      ws.onopen = function () {
+        console.log("websocket.onopen");
+        ws.send(frameHeaders(options.headers));
+
+        sendQueue.forEach(toSend => {
+          ws.send(toSend);
+        });
+      };
+
+      ws.onclose = function () {
+        console.log("WebSocket Closed");
+        detach(() => {
+          options.onEnd();
+        });
+      };
+
+      ws.onerror = function (error) {
+        console.log('WebSocket Error ' + error);
+      };
+
+      ws.onmessage = function (e) {
+        const asUint8Array = new Uint8Array(e.data);
+        detach(() => {
+          options.onChunk(asUint8Array);
+        });
+      };
+
+    },
     cancel: () => {
       options.debug && debug("websocket.abort");
-      ws.close();
+      detach(() => {
+        ws.close();
+      });
     }
   };
 }

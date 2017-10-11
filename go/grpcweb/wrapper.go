@@ -58,14 +58,19 @@ func WrapServer(server *grpc.Server, options ...Option) *WrappedGrpcServer {
 func (w *WrappedGrpcServer) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	fmt.Println("req", req)
 
-	NewWebSocketWrapper(resp, req, w)
+	if w.IsGrpcWebSocketRequest(req) {
+		NewWebSocketWrapper(resp, req, w)
+		return
+	}
 
-	fmt.Println("After wrapper")
-	//if w.IsAcceptableGrpcCorsRequest(req) || w.IsGrpcWebRequest(req) {
-	//	w.corsWrapper.Handler(http.HandlerFunc(w.HandleGrpcWebRequest)).ServeHTTP(resp, req)
-	//	return
-	//}
-	//w.server.ServeHTTP(resp, req)
+	if w.IsAcceptableGrpcCorsRequest(req) || w.IsGrpcWebRequest(req) {
+		w.corsWrapper.Handler(http.HandlerFunc(w.HandleGrpcWebRequest)).ServeHTTP(resp, req)
+		return
+	}
+	w.server.ServeHTTP(resp, req)
+}
+func (w *WrappedGrpcServer) IsGrpcWebSocketRequest(req *http.Request) bool {
+	return req.Header.Get("Upgrade") == "websocket" && req.Header.Get("Sec-Websocket-Protocol") == "grpc-websockets"
 }
 
 // HandleGrpcWebRequest takes a HTTP request that is assumed to be a gRPC-Web request and wraps it with a compatibility
