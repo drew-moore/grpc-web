@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/websocket"
 	"io"
@@ -38,7 +37,6 @@ func (w *WebSocketResponseWriter) Header() http.Header {
 }
 
 func (w *WebSocketResponseWriter) Write(b []byte) (int, error) {
-	fmt.Println("RespWrite", b, string(b), w.writtenHeaders)
 	if !w.writtenHeaders {
 		w.WriteHeader(http.StatusOK)
 	}
@@ -50,15 +48,12 @@ func (w *WebSocketResponseWriter) writeHeaderFrame(headers http.Header) {
 	headers.Write(headerBuffer)
 	headerGrpcDataHeader := []byte{1 << 7, 0, 0, 0, 0} // MSB=1 indicates this is a header data frame.
 	binary.BigEndian.PutUint32(headerGrpcDataHeader[1:5], uint32(headerBuffer.Len()))
-	fmt.Println("WritingHeaderLength", headerGrpcDataHeader)
 	w.wsConn.Write(headerGrpcDataHeader)
-	fmt.Println("WritingHeaderBytes", string(headerBuffer.Bytes()))
 	w.wsConn.Write(headerBuffer.Bytes())
 }
 
 func (w *WebSocketResponseWriter) WriteHeader(code int) {
 	w.writtenHeaders = true
-	fmt.Println("RespWriteHeader", code)
 	w.writeHeaderFrame(w.headers)
 	return
 }
@@ -86,12 +81,11 @@ func (w *WebSocketResponseWriter) extractTrailerHeaders() http.Header {
 }
 
 func (w *WebSocketResponseWriter) FlushTrailers() {
-	fmt.Println("FlushTrailers")
 	w.writeHeaderFrame(w.extractTrailerHeaders())
 }
 
 func (w *WebSocketResponseWriter) Flush() {
-	fmt.Println("Flush")
+	// no-op
 }
 
 func (w *WebSocketResponseWriter) CloseNotify() <-chan bool {
@@ -111,7 +105,6 @@ func (w *WebSocketWrappedReader) Close() error {
 func (w *WebSocketWrappedReader) Read(p []byte) (int, error) {
 	n, err := w.wsConn.Read(p)
 	if err == io.EOF {
-		fmt.Println("EOF!")
 		defer func() {
 			w.respWriter.closeNotifyChan <- true
 		}()
@@ -124,57 +117,6 @@ func NewWebsocketWrappedReader(wsConn *websocket.Conn, respWriter *WebSocketResp
 		wsConn,
 		respWriter,
 	}
-}
-
-func NewWebSocketWrapper(resp http.ResponseWriter, req *http.Request, w *WrappedGrpcServer) {
-	websocket.Handler(func(wsConn *websocket.Conn) {
-		wsConn.PayloadType = websocket.BinaryFrame
-
-		fmt.Println("Bridging Websocket")
-
-		respWriter := newWebSocketResponseWriter(wsConn)
-
-		var readLengthBuffer [5]byte
-		if _, err := wsConn.Read(readLengthBuffer[:]); err != nil {
-			fmt.Println("ReadHeaderLength.err", err)
-			return
-		}
-
-		fmt.Println("readLengthBuffer", readLengthBuffer)
-
-		headerLength := binary.BigEndian.Uint32(readLengthBuffer[1:])
-
-		readBytes := make([]byte, int(headerLength))
-
-		if _, err := wsConn.Read(readBytes); err != nil {
-			if err == io.EOF {
-				err = io.ErrUnexpectedEOF
-			}
-			fmt.Println("ReadHeader.err", err)
-			return
-		}
-
-		fmt.Println("readBytes", readBytes, string(readBytes))
-		headers, err := parseHeaders(string(readBytes))
-		if err != nil {
-			fmt.Println("parseHeaders.err", err)
-			return
-		}
-
-		wrappedReader := NewWebsocketWrappedReader(wsConn, respWriter)
-
-		req.Body = wrappedReader
-		req.Method = http.MethodPost
-		req.Header = headers
-		req.ProtoMajor = 2
-		req.ProtoMinor = 0
-		contentType := req.Header.Get("content-type")
-		req.Header.Set("content-type", strings.Replace(contentType, "application/grpc-web", "application/grpc", 1))
-
-		fmt.Println("Going to ServeHTTP")
-		w.server.ServeHTTP(respWriter, req)
-		fmt.Println("After ServeHTTP", respWriter.Header())
-	}).ServeHTTP(resp, req)
 }
 
 func parseHeaders(headerString string) (http.Header, error) {

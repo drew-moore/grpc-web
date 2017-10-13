@@ -4,6 +4,7 @@
 package grpcweb
 
 import (
+	"encoding/binary"
 	"net/http"
 
 	"strings"
@@ -11,7 +12,9 @@ import (
 
 	"fmt"
 	"github.com/rs/cors"
+	"golang.org/x/net/websocket"
 	"google.golang.org/grpc"
+	"io"
 )
 
 var (
@@ -59,7 +62,7 @@ func (w *WrappedGrpcServer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	fmt.Println("req", req)
 
 	if w.IsGrpcWebSocketRequest(req) {
-		NewWebSocketWrapper(resp, req, w)
+		w.HandleGrpcWebsocketRequest(resp, req)
 		return
 	}
 
@@ -69,6 +72,7 @@ func (w *WrappedGrpcServer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	}
 	w.server.ServeHTTP(resp, req)
 }
+
 func (w *WrappedGrpcServer) IsGrpcWebSocketRequest(req *http.Request) bool {
 	return req.Header.Get("Upgrade") == "websocket" && req.Header.Get("Sec-Websocket-Protocol") == "grpc-websockets"
 }
@@ -81,6 +85,51 @@ func (w *WrappedGrpcServer) HandleGrpcWebRequest(resp http.ResponseWriter, req *
 	intResp := newGrpcWebResponse(resp)
 	w.server.ServeHTTP(intResp, intReq)
 	intResp.finishRequest(req)
+}
+
+func (w *WrappedGrpcServer) HandleGrpcWebsocketRequest(resp http.ResponseWriter, req *http.Request) {
+	websocket.Handler(w.handleWebSocket).ServeHTTP(resp, req)
+}
+
+func (w *WrappedGrpcServer) handleWebSocket(wsConn *websocket.Conn) {
+	wsConn.PayloadType = websocket.BinaryFrame
+
+	respWriter := newWebSocketResponseWriter(wsConn)
+
+	var readLengthBuffer [5]byte
+	if _, err := wsConn.Read(readLengthBuffer[:]); err != nil {
+		return
+	}
+
+	headerLength := binary.BigEndian.Uint32(readLengthBuffer[1:])
+
+	readBytes := make([]byte, int(headerLength))
+
+	if _, err := wsConn.Read(readBytes); err != nil {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+		return
+	}
+
+	headers, err := parseHeaders(string(readBytes))
+	if err != nil {
+		return
+	}
+
+	wrappedReader := NewWebsocketWrappedReader(wsConn, respWriter)
+
+	req := wsConn.Request()
+
+	req.Body = wrappedReader
+	req.Method = http.MethodPost
+	req.Header = headers
+	req.ProtoMajor = 2
+	req.ProtoMinor = 0
+	contentType := req.Header.Get("content-type")
+	req.Header.Set("content-type", strings.Replace(contentType, "application/grpc-web", "application/grpc", 1))
+
+	w.server.ServeHTTP(respWriter, req)
 }
 
 // IsGrpcWebRequest determines if a request is a gRPC-Web request by checking that the "content-type" is
