@@ -25,6 +25,8 @@ describe("cancellation handling", () => {
         return {
           sendMessage: () => {
           },
+          finishSend() {
+          },
           start: () => {
           },
           cancel: () => {

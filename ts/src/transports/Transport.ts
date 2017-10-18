@@ -2,6 +2,7 @@ import {Metadata} from "../metadata";
 import fetchRequest from "./fetch";
 import xhrRequest from "./xhr";
 import mozXhrRequest from "./mozXhr";
+import websocketRequest from "./websocket";
 import httpNodeRequest from "./nodeHttp";
 import {MethodDefinition} from "../service";
 import {ProtobufMessage} from "../message";
@@ -11,6 +12,7 @@ declare const Headers: any;
 
 export interface Transport {
   sendMessage(msgBytes: ArrayBufferView): void
+  finishSend(): void
   cancel(): void
   start(metadata: Metadata): void
 }
@@ -87,4 +89,8 @@ function detectTransport(): TransportConstructor {
   }
 
   throw new Error("No suitable transport found for gRPC-Web");
+}
+
+export function WebsocketTransportFactory(transportOptions: TransportOptions): Transport {
+  return websocketRequest(transportOptions);
 }

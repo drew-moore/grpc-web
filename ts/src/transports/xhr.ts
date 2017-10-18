@@ -51,6 +51,10 @@ class XHR implements Transport {
     this.xhr.send(msgBytes);
   }
 
+  finishSend() {
+
+  }
+
   start(metadata: Metadata) {
     this.metadata = metadata;
 

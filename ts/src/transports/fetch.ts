@@ -72,6 +72,10 @@ class Fetch implements Transport {
     this.send(msgBytes);
   }
 
+  finishSend() {
+
+  }
+
   start(metadata: Metadata) {
     this.metadata = metadata;
   }

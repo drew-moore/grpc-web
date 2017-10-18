@@ -24,6 +24,10 @@ class NodeHttp implements Transport {
     this.request.end();
   }
 
+  finishSend() {
+
+  }
+
   responseCallback(response: http.IncomingMessage) {
     this.options.debug && console.log("NodeHttp.response", response.statusCode);
     const headers = filterHeadersForUndefined(response.headers);

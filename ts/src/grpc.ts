@@ -8,8 +8,9 @@ import * as impService from "./service";
 import {ProtobufMessage} from "./message";
 
 export namespace grpc {
-  export interface Transport extends impTransport.TransportConstructor{}
+  export interface Transport extends impTransport.Transport{};
   export type TransportOptions = impTransport.TransportOptions;
+  export type TransportConstructor = impTransport.TransportConstructor;
   export const DefaultTransportFactory = impTransport.DefaultTransportFactory;
   
   export type UnaryMethodDefinition<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = impService.UnaryMethodDefinition<TRequest, TResponse>;

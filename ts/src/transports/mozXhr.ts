@@ -51,6 +51,10 @@ class MozXHR implements Transport {
     this.xhr.send(msgBytes);
   }
 
+  finishSend() {
+
+  }
+
   start(metadata: Metadata) {
     this.options.debug && debug("MozXHR.start");
     this.metadata = metadata;

@@ -17,6 +17,7 @@ export type ClientRpcOptions<TRequest extends ProtobufMessage, TResponse extends
 export interface Client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> {
   start(metadata?: Metadata.ConstructorArg): void;
   send(message: TRequest): void;
+  finishSend(): void;
   close(): void;
 
   onHeaders(callback: (headers: Metadata) => void): void;
@@ -36,6 +37,7 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
   sentFirstMessage: boolean = false;
   completed: boolean = false;
   closed: boolean = false;
+  finishedSend: boolean = false;
 
   onHeadersCallbacks: Array<(headers: Metadata) => void> = [];
   onMessageCallbacks: Array<(res: TResponse) => void> = [];
@@ -251,6 +253,9 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
     if (this.closed) {
       throw new Error("Client already closed - cannot .send()");
     }
+    if (this.finishedSend) {
+      throw new Error("Client already finished sending - cannot .send()");
+    }
     if (!this.methodDefinition.requestStream && this.sentFirstMessage) {
       // This is a unary method and the first and only message has been sent
       throw new Error("Message already sent for non-client-streaming method - cannot .send()");
@@ -258,6 +263,20 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
     this.sentFirstMessage = true;
     const msgBytes = frameRequest(msg);
     this.transport.sendMessage(msgBytes);
+  }
+
+  finishSend() {
+    if (!this.started) {
+      throw new Error("Client not started - .finishSend() must be called before .close()");
+    }
+    if (this.closed) {
+      throw new Error("Client already closed - cannot .send()");
+    }
+    if (this.finishedSend) {
+      throw new Error("Client already finished sending - cannot .finishSend()");
+    }
+    this.finishedSend = true;
+    this.transport.finishSend();
   }
 
   close() {

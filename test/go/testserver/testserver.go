@@ -44,13 +44,17 @@ func main() {
 	testproto.RegisterTestUtilServiceServer(grpcServer, testServer)
 	grpclog.SetLogger(log.New(os.Stdout, "testserver: ", log.LstdFlags))
 
-	wrappedServer := grpcweb.WrapServer(grpcServer)
+	websocketOriginFunc := grpcweb.WithWebsocketOriginFunc(func(req *http.Request) bool {
+		return true
+	})
+
+	wrappedServer := grpcweb.WrapServer(grpcServer, grpcweb.WithWebsockets(true), websocketOriginFunc)
 	handler := func(resp http.ResponseWriter, req *http.Request) {
 		wrappedServer.ServeHTTP(resp, req)
 	}
 
 	emptyGrpcServer := grpc.NewServer()
-	emptyWrappedServer := grpcweb.WrapServer(emptyGrpcServer, grpcweb.WithCorsForRegisteredEndpointsOnly(false))
+	emptyWrappedServer := grpcweb.WrapServer(emptyGrpcServer, grpcweb.WithWebsockets(true), websocketOriginFunc, grpcweb.WithCorsForRegisteredEndpointsOnly(false))
 	emptyHandler := func(resp http.ResponseWriter, req *http.Request) {
 		emptyWrappedServer.ServeHTTP(resp, req)
 	}
@@ -231,9 +235,13 @@ func (s *testSrv) PingList(ping *testproto.PingRequest, stream testproto.TestSer
 }
 
 func (s *testSrv) PingStream(stream testproto.TestService_PingStreamServer) error {
+	allValues := ""
 	for {
 		in, err := stream.Recv()
 		if err == io.EOF {
+			stream.SendAndClose(&testproto.PingResponse{
+				Value: allValues,
+			})
 			return nil
 		}
 		if err != nil {
@@ -245,15 +253,13 @@ func (s *testSrv) PingStream(stream testproto.TestService_PingStreamServer) erro
 		if in.GetSendTrailers() {
 			stream.SetTrailer(metadata.Pairs("TrailerTestKey1", "ServerValue1", "TrailerTestKey2", "ServerValue2"))
 		}
+		if allValues == "" {
+			allValues = in.GetValue()
+		} else {
+			allValues = allValues + "," + in.GetValue()
+		}
 		if in.FailureType == testproto.PingRequest_CODE {
-			if in.ErrorCodeReturned == 0 {
-				stream.SendAndClose(&testproto.PingResponse{
-					Value: in.Value,
-				})
-				return nil
-			} else {
-				return grpc.Errorf(codes.Code(in.ErrorCodeReturned), "Intentionally returning status code: %d", in.ErrorCodeReturned)
-			}
+			return grpc.Errorf(codes.Code(in.ErrorCodeReturned), "Intentionally returning status code: %d", in.ErrorCodeReturned)
 		}
 	}
 }

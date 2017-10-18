@@ -2,6 +2,7 @@ import {
   testHost,
   corsHost
 } from "../../hosts-config";
+import {grpc} from "../../../ts/src/index";
 
 type TestConfig = {
   testHostUrl: string,
@@ -43,10 +44,18 @@ const http2Config: TestConfig = {
 };
 
 export function runWithHttp1AndHttp2(cb: (config: TestConfig) => void) {
-  describe("(http1)", () => {
-    cb(http1Config);
-  });
+  // describe("(http1)", () => {
+  //   cb(http1Config);
+  // });
   describe("(http2)", () => {
     cb(http2Config);
   });
+}
+
+export function runWithTransports(transports: {[key: string]: grpc.TransportConstructor | undefined}, cb: (transport: grpc.TransportConstructor | undefined) => void) {
+  for(let transportName in transports) {
+    describe(transportName, () => {
+      cb(transports[transportName]);
+    })
+  }
 }
