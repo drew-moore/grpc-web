@@ -34,6 +34,7 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
   props: ClientRpcOptions<TRequest, TResponse>;
 
   started: boolean = false;
+  sentFirstMessage: boolean = false;
   completed: boolean = false;
   closed: boolean = false;
 
@@ -240,7 +241,7 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
 
   start(metadata?: Metadata.ConstructorArg) {
     if (this.started) {
-      throw new Error("Client already started");
+      throw new Error("Client already started - cannot .start()");
     }
     this.started = true;
 
@@ -258,6 +259,11 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
     if (this.closed) {
       throw new Error("Client already closed - cannot .send()");
     }
+    if (!this.methodDescriptor.requestStream && this.sentFirstMessage) {
+      // This is a unary method and the first and only message has been sent
+      throw new Error("Message already sent for non-client-streaming method - cannot .send()");
+    }
+    this.sentFirstMessage = true;
     const msgBytes = frameRequest(msg);
     this.transport.sendMessage(msgBytes);
   }
@@ -271,7 +277,7 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
       this.props.debug && debug("request.abort aborting request");
       this.transport.cancel();
     } else {
-      throw new Error("Client already closed");
+      throw new Error("Client already closed - cannot .close()");
     }
   }
 }

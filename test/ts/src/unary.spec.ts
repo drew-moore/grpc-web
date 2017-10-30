@@ -22,16 +22,15 @@ describe(`unary`, () => {
       ping.setValue("hello world");
 
       assert.throw(() => {
-          grpc.unary(TestService.PingList as any as grpc.UnaryMethodDefinition<PingRequest, PingResponse>, {
-            debug: DEBUG,
-            request: ping,
-            host: testHostUrl,
-            onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
-            }
-          })
-        }, ".unary cannot be used with server-streaming methods. Use .invoke or .client instead."
-      );
+        grpc.unary(TestService.PingList as any as grpc.UnaryMethodDefinition<PingRequest, PingResponse>, {
+          debug: DEBUG,
+          request: ping,
+          host: testHostUrl,
+          onEnd: ({status, statusMessage, headers, message, trailers}) => {
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+          }
+        })
+      }, ".unary cannot be used with server-streaming methods. Use .invoke or .client instead.");
     });
 
     it(`should reject a client-streaming method`, () => {
@@ -39,16 +38,15 @@ describe(`unary`, () => {
       ping.setValue("hello world");
 
       assert.throw(() => {
-          grpc.unary(TestService.PingStream as any as grpc.UnaryMethodDefinition<PingRequest, PingResponse>, {
-            debug: DEBUG,
-            request: ping,
-            host: testHostUrl,
-            onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
-            }
-          })
-        }, ".unary cannot be used with client-streaming methods. Use .client instead."
-      );
+        grpc.unary(TestService.PingStream as any as grpc.UnaryMethodDefinition<PingRequest, PingResponse>, {
+          debug: DEBUG,
+          request: ping,
+          host: testHostUrl,
+          onEnd: ({status, statusMessage, headers, message, trailers}) => {
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+          }
+        })
+      }, ".unary cannot be used with client-streaming methods. Use .client instead.");
     });
 
     headerTrailerCombos((withHeaders, withTrailers) => {

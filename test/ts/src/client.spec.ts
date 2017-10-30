@@ -1,76 +1,76 @@
 // gRPC-Web library
-import {
-  grpc,
-} from "../../../ts/src/index";
+import {grpc,} from "../../../ts/src/index";
 
 import {debug} from "../../../ts/src/debug";
 import {assert} from "chai";
-
 // Generated Test Classes
-import {
-  Empty,
-} from "google-protobuf/google/protobuf/empty_pb";
-import {
-  PingRequest,
-  PingResponse,
-} from "../_proto/improbable/grpcweb/test/test_pb";
+import {Empty,} from "google-protobuf/google/protobuf/empty_pb";
+import {PingRequest, PingResponse,} from "../_proto/improbable/grpcweb/test/test_pb";
 import {FailService, TestService} from "../_proto/improbable/grpcweb/test/test_pb_service";
-import {DEBUG, UncaughtExceptionListener, continueStream} from "./util";
+import {continueStream, DEBUG, UncaughtExceptionListener} from "./util";
 import {headerTrailerCombos, runWithHttp1AndHttp2} from "./testCombinations";
 
 describe(`client`, () => {
-  runWithHttp1AndHttp2(({ testHostUrl, corsHostUrl, unavailableHost, emptyHost}) => {
+  runWithHttp1AndHttp2(({testHostUrl, corsHostUrl, unavailableHost, emptyHost}) => {
     it(`should throw an error if close is called before start`, () => {
       assert.throw(() => {
-          const client = grpc.client(TestService.Ping, {
-            debug: DEBUG,
-            host: testHostUrl,
-          });
-          client.close();
-        }, "Client not started - .start() must be called before .close()"
-      );
+        const client = grpc.client(TestService.Ping, {
+          debug: DEBUG,
+          host: testHostUrl,
+        });
+        client.close();
+      }, "Client not started - .start() must be called before .close()");
     });
 
     it(`should throw an error if send is called before start`, () => {
       const ping = new PingRequest();
       ping.setValue("hello world");
       assert.throw(() => {
-          const client = grpc.client(TestService.Ping, {
-            debug: DEBUG,
-            host: testHostUrl,
-          });
-          client.send(ping);
-        }, "Client not started - .start() must be called before .send()"
-      );
+        const client = grpc.client(TestService.Ping, {
+          debug: DEBUG,
+          host: testHostUrl,
+        });
+        client.send(ping);
+      }, "Client not started - .start() must be called before .send()");
     });
 
     it(`should throw an error if start is called twice`, () => {
+      assert.throw(() => {
+        const client = grpc.client(TestService.Ping, {
+          debug: DEBUG,
+          host: testHostUrl,
+        });
+        client.start();
+        client.start();
+      }, "Client already started - cannot .start()");
+    });
+
+    it(`should throw an error if send is called more than once for a unary method`, () => {
       const ping = new PingRequest();
       ping.setValue("hello world");
       assert.throw(() => {
-          const client = grpc.client(TestService.Ping, {
-            debug: DEBUG,
-            host: testHostUrl,
-          });
-          client.start();
-          client.start();
-        }, "Client already started"
-      );
+        const client = grpc.client(TestService.Ping, {
+          debug: DEBUG,
+          host: testHostUrl,
+        });
+        client.start();
+        client.send(ping);
+        client.send(ping);
+      }, "Message already sent for non-client-streaming method - cannot .send()");
     });
 
     it(`should throw an error if send is called after close`, () => {
       const ping = new PingRequest();
       ping.setValue("hello world");
       assert.throw(() => {
-          const client = grpc.client(TestService.Ping, {
-            debug: DEBUG,
-            host: testHostUrl,
-          });
-          client.start();
-          client.close();
-          client.send(ping);
-        }, "Client already closed - cannot .send()"
-      );
+        const client = grpc.client(TestService.Ping, {
+          debug: DEBUG,
+          host: testHostUrl,
+        });
+        client.start();
+        client.close();
+        client.send(ping);
+      }, "Client already closed - cannot .send()");
     });
 
     headerTrailerCombos((withHeaders, withTrailers) => {
@@ -88,21 +88,19 @@ describe(`client`, () => {
           host: testHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
-            didGetOnHeaders = true;
-            if (withHeaders) {
-              assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
-              assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
-            }
-          },
-        );
+          DEBUG && debug("headers", headers);
+          didGetOnHeaders = true;
+          if (withHeaders) {
+            assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
+            assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
+          }
+        });
         client.onMessage((message: PingResponse) => {
-            didGetOnMessage = true;
-            assert.ok(message instanceof PingResponse);
-            assert.deepEqual(message.getValue(), "hello world");
-            assert.deepEqual(message.getCounter(), 252);
-          },
-        );
+          didGetOnMessage = true;
+          assert.ok(message instanceof PingResponse);
+          assert.deepEqual(message.getValue(), "hello world");
+          assert.deepEqual(message.getCounter(), 252);
+        });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
           DEBUG && debug("status", status, "statusMessage", statusMessage);
           assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
@@ -136,21 +134,19 @@ describe(`client`, () => {
           host: testHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
-            didGetOnHeaders = true;
-            if (withHeaders) {
-              assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
-              assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
-            }
-          },
-        );
+          DEBUG && debug("headers", headers);
+          didGetOnHeaders = true;
+          if (withHeaders) {
+            assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
+            assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
+          }
+        });
         client.onMessage((message: PingResponse) => {
-            didGetOnMessage = true;
-            assert.ok(message instanceof PingResponse);
-            assert.deepEqual(message.getValue(), "hello world");
-            assert.deepEqual(message.getCounter(), 252);
-          },
-        );
+          didGetOnMessage = true;
+          assert.ok(message instanceof PingResponse);
+          assert.deepEqual(message.getValue(), "hello world");
+          assert.deepEqual(message.getCounter(), 252);
+        });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
           DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
@@ -184,19 +180,17 @@ describe(`client`, () => {
           host: testHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
-            didGetOnHeaders = true;
-            if (withHeaders) {
-              assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
-              assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
-            }
-          },
-        );
+          DEBUG && debug("headers", headers);
+          didGetOnHeaders = true;
+          if (withHeaders) {
+            assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
+            assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
+          }
+        });
         client.onMessage((message: PingResponse) => {
-            assert.ok(message instanceof PingResponse);
-            assert.strictEqual(message.getCounter(), onMessageId++);
-          },
-        );
+          assert.ok(message instanceof PingResponse);
+          assert.strictEqual(message.getCounter(), onMessageId++);
+        });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
           DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
@@ -233,22 +227,20 @@ describe(`client`, () => {
           host: testHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
-            didGetOnHeaders = true;
-            if (withHeaders) {
-              assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
-              assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
-            }
-          },
-        );
+          DEBUG && debug("headers", headers);
+          didGetOnHeaders = true;
+          if (withHeaders) {
+            assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
+            assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
+          }
+        });
         client.onMessage((message: PingResponse) => {
-            continueStream(testHostUrl, streamIdentifier, (status) => {
-              DEBUG && debug("continueStream.status", status);
-            });
-            assert.ok(message instanceof PingResponse);
-            assert.strictEqual(message.getCounter(), onMessageId++);
-          },
-        );
+          continueStream(testHostUrl, streamIdentifier, (status) => {
+            DEBUG && debug("continueStream.status", status);
+          });
+          assert.ok(message instanceof PingResponse);
+          assert.strictEqual(message.getCounter(), onMessageId++);
+        });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
           DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
@@ -282,19 +274,17 @@ describe(`client`, () => {
           host: testHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
-            didGetOnHeaders = true;
-            if (withHeaders) {
-              assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
-              assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
-            }
-          },
-        );
+          DEBUG && debug("headers", headers);
+          didGetOnHeaders = true;
+          if (withHeaders) {
+            assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
+            assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
+          }
+        });
         client.onMessage((message: PingResponse) => {
-            assert.ok(message instanceof PingResponse);
-            assert.strictEqual(message.getCounter(), onMessageId++);
-          },
-        );
+          assert.ok(message instanceof PingResponse);
+          assert.strictEqual(message.getCounter(), onMessageId++);
+        });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
           DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
@@ -328,14 +318,12 @@ describe(`client`, () => {
           host: testHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
-            didGetOnHeaders = true;
-          },
-        );
+          DEBUG && debug("headers", headers);
+          didGetOnHeaders = true;
+        });
         client.onMessage((message: Empty) => {
-            didGetOnMessage = true;
-          },
-        );
+          didGetOnMessage = true;
+        });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
           DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.deepEqual(trailers.get("grpc-status"), ["12"]);
@@ -367,14 +355,12 @@ describe(`client`, () => {
           host: corsHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
-            didGetOnHeaders = true;
-          },
-        );
+          DEBUG && debug("headers", headers);
+          didGetOnHeaders = true;
+        });
         client.onMessage((message: Empty) => {
-            didGetOnMessage = true;
-          },
-        );
+          didGetOnMessage = true;
+        });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
           DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           // Some browsers return empty Headers for failed requests
@@ -400,16 +386,14 @@ describe(`client`, () => {
         host: testHostUrl,
       });
       client.onHeaders((headers: grpc.Metadata) => {
-          DEBUG && debug("headers", headers);
-          didGetOnHeaders = true;
-          assert.deepEqual(headers.get("grpc-status"), []);
-          assert.deepEqual(headers.get("grpc-message"), []);
-        },
-      );
+        DEBUG && debug("headers", headers);
+        didGetOnHeaders = true;
+        assert.deepEqual(headers.get("grpc-status"), []);
+        assert.deepEqual(headers.get("grpc-message"), []);
+      });
       client.onMessage((message: Empty) => {
-          didGetOnMessage = true;
-        },
-      );
+        didGetOnMessage = true;
+      });
       client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
         DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
         assert.strictEqual(statusMessage, "Response closed without grpc-status (Headers only)");
@@ -432,14 +416,12 @@ describe(`client`, () => {
         host: unavailableHost, // Should not be available
       });
       client.onHeaders((headers: grpc.Metadata) => {
-          DEBUG && debug("headers", headers);
-          didGetOnHeaders = true;
-        },
-      );
+        DEBUG && debug("headers", headers);
+        didGetOnHeaders = true;
+      });
       client.onMessage((message: Empty) => {
-          didGetOnMessage = true;
-        },
-      );
+        didGetOnMessage = true;
+      });
       client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
         DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
         assert.strictEqual(statusMessage, "Response closed without headers");

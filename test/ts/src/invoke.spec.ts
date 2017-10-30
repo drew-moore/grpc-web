@@ -25,22 +25,21 @@ describe("invoke", () => {
       ping.setValue("hello world");
 
       assert.throw(() => {
-          grpc.invoke(TestService.PingStream, {
-            debug: DEBUG,
-            request: ping,
-            host: testHostUrl,
-            onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
-            },
-            onMessage: (message: PingResponse) => {
-              DEBUG && debug("message", message);
-            },
-            onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage);
-            }
-          })
-        }, ".invoke cannot be used with client-streaming methods. Use .client instead."
-      );
+        grpc.invoke(TestService.PingStream, {
+          debug: DEBUG,
+          request: ping,
+          host: testHostUrl,
+          onHeaders: (headers: grpc.Metadata) => {
+            DEBUG && debug("headers", headers);
+          },
+          onMessage: (message: PingResponse) => {
+            DEBUG && debug("message", message);
+          },
+          onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
+            DEBUG && debug("status", status, "statusMessage", statusMessage);
+          }
+        })
+      }, ".invoke cannot be used with client-streaming methods. Use .client instead.");
     });
 
     headerTrailerCombos((withHeaders, withTrailers) => {
