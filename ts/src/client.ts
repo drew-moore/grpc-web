@@ -26,7 +26,7 @@ export interface Client<TRequest extends ProtobufMessage, TResponse extends Prot
 }
 
 export function client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: ClientRpcOptions<TRequest, TResponse>): Client<TRequest, TResponse> {
-  return new ClientImpl(methodDescriptor, props);
+  return new ClientImpl<TRequest, TResponse, M>(methodDescriptor, props);
 }
 
 export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends MethodDefinition<TRequest, TResponse>> {

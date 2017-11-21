@@ -9,12 +9,10 @@ import {PingRequest, PingResponse,} from "../_proto/improbable/grpcweb/test/test
 import {FailService, TestService} from "../_proto/improbable/grpcweb/test/test_pb_service";
 import {continueStream, DEBUG, UncaughtExceptionListener} from "./util";
 import {headerTrailerCombos, runWithHttp1AndHttp2, runWithTransports} from "./testCombinations";
-import {WebsocketTransportFactory} from "../../../ts/src/transports/Transport";
-import websocketRequest from "../../../ts/src/transports/websocket";
 
 describe(`client`, () => {
   runWithHttp1AndHttp2(({testHostUrl, corsHostUrl, unavailableHost, emptyHost}) => {
-    runWithTransports({"defaultTransport": undefined, "websocketTransport": websocketRequest}, transport => {
+    runWithTransports({"defaultTransport": undefined, "websocketTransport": grpc.WebsocketTransportFactory}, transport => {
       it(`should throw an error if close is called before start`, () => {
         assert.throw(() => {
           const client = grpc.client(TestService.Ping, {
@@ -536,7 +534,7 @@ describe(`client`, () => {
           const client = grpc.client(TestService.PingStream, {
             debug: DEBUG,
             host: testHostUrl,
-            transport: WebsocketTransportFactory,
+            transport: grpc.WebsocketTransportFactory,
           });
           client.onHeaders((headers: grpc.Metadata) => {
             DEBUG && debug("headers", headers);
@@ -594,7 +592,7 @@ describe(`client`, () => {
           const client = grpc.client(TestService.PingPongBidi, {
             debug: DEBUG,
             host: testHostUrl,
-            transport: WebsocketTransportFactory,
+            transport: grpc.WebsocketTransportFactory,
           });
           client.onHeaders((headers: grpc.Metadata) => {
             DEBUG && debug("headers", headers);
@@ -653,7 +651,7 @@ describe(`client`, () => {
           const client = grpc.client(TestService.PingPongBidi, {
             debug: DEBUG,
             host: testHostUrl,
-            transport: WebsocketTransportFactory,
+            transport: grpc.WebsocketTransportFactory,
           });
           client.onHeaders((headers: grpc.Metadata) => {
             DEBUG && debug("headers", headers);
