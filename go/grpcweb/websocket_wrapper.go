@@ -109,8 +109,10 @@ func (w *WebSocketWrappedReader) Read(p []byte) (int, error) {
 			w.respWriter.closeNotifyChan <- true
 		}()
 	}
-	// TODO - Remove this hack for checking for an empty message as indication of close send
-	if n == 5 && p[0] == 0 && p[1] == 0 && p[2] == 0 && p[3] == 0 && p[4] == 0 {
+
+	// If the Read was for 5 bytes then this is *likely* a read for a frame prefix
+	// If the first byte's second most significant bit is set then this indicates the client has finished sending
+	if len(p) == 5 && p[0] == 64 && p[1] == 0 && p[2] == 0 && p[3] == 0 && p[4] == 0 {
 		return 0, io.EOF
 	}
 	return n, err

@@ -16,12 +16,12 @@ import {
 } from "../_proto/improbable/grpcweb/test/test_pb";
 import {FailService, TestService} from "../_proto/improbable/grpcweb/test/test_pb_service";
 import {DEBUG, continueStream, UncaughtExceptionListener} from "./util";
-import {headerTrailerCombos, runWithHttp1AndHttp2, runWithTransports} from "./testCombinations";
+import {headerTrailerCombos, runWithHttp1AndHttp2, runWithSupportedTransports} from "./testCombinations";
 import websocketRequest from "../../../ts/src/transports/websocket";
 
 describe("invoke", () => {
   runWithHttp1AndHttp2(({ testHostUrl, corsHostUrl, unavailableHost, emptyHost }) => {
-    runWithTransports({"defaultTransport": undefined, "websocketTransport": websocketRequest}, transport => {
+    runWithSupportedTransports(transport => {
       it(`should reject a client-streaming method`, () => {
         const ping = new PingRequest();
         ping.setValue("hello world");

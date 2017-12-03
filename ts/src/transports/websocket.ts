@@ -7,6 +7,8 @@ enum WebsocketSignal {
   FINISH_SEND = 1
 }
 
+const finishSendFrame = new Uint8Array([64, 0, 0, 0, 0]);
+
 /* websocketRequest uses Websockets and requires the server to enable experimental websocket support */
 export default function websocketRequest(options: TransportOptions): Transport {
   options.debug && debug("websocketRequest", options);
@@ -21,7 +23,7 @@ export default function websocketRequest(options: TransportOptions): Transport {
 
   function sendToWebsocket(toSend: ArrayBufferView | WebsocketSignal) {
     if (toSend === WebsocketSignal.FINISH_SEND) {
-      ws.send(new Uint8Array(5)); //Sending an empty buffer indicates end of client sending
+      ws.send(finishSendFrame);
     } else {
       ws.send(toSend)
     }
