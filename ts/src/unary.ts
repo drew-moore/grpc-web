@@ -6,24 +6,24 @@ import {Request} from "./invoke";
 import {client} from "./client";
 import {ProtobufMessage} from "./message";
 
-export type UnaryOutput<TResponse> = {
-  status: Code,
+export interface UnaryOutput<TResponse> {
+  status: Code;
   statusMessage: string;
   headers: Metadata;
   message: TResponse | null;
   trailers: Metadata;
 }
 
-export type UnaryRpcOptions<M extends UnaryMethodDefinition<TRequest, TResponse>, TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = {
-  host: string,
-  request: TRequest,
-  metadata?: Metadata.ConstructorArg,
-  onEnd: (output: UnaryOutput<TResponse>) => void,
-  transport?: TransportConstructor,
-  debug?: boolean,
+export interface UnaryRpcOptions<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> {
+  host: string;
+  request: TRequest;
+  metadata?: Metadata.ConstructorArg;
+  onEnd: (output: UnaryOutput<TResponse>) => void;
+  transport?: TransportConstructor;
+  debug?: boolean;
 }
 
-export function unary<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends UnaryMethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: UnaryRpcOptions<M, TRequest, TResponse>): Request {
+export function unary<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends UnaryMethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: UnaryRpcOptions<TRequest, TResponse>): Request {
   if (methodDescriptor.responseStream) {
     throw new Error(".unary cannot be used with server-streaming methods. Use .invoke or .client instead.");
   }

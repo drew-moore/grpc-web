@@ -21,13 +21,13 @@ export interface TransportConstructor {
   (options: TransportOptions): Transport;
 }
 
-export type TransportOptions = {
-  methodDefinition: MethodDefinition<ProtobufMessage, ProtobufMessage>,
-  debug: boolean,
-  url: string,
-  onHeaders: (headers: Metadata, status: number) => void,
-  onChunk: (chunkBytes: Uint8Array, flush?: boolean) => void,
-  onEnd: (err?: Error) => void,
+export interface TransportOptions {
+  methodDefinition: MethodDefinition<ProtobufMessage, ProtobufMessage>;
+  debug: boolean;
+  url: string;
+  onHeaders: (headers: Metadata, status: number) => void;
+  onChunk: (chunkBytes: Uint8Array, flush?: boolean) => void;
+  onEnd: (err?: Error) => void;
 }
 
 let xhr: XMLHttpRequest;

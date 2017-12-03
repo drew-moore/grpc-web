@@ -8,10 +8,10 @@ import {MethodDefinition} from "./service";
 import {frameRequest} from "./util";
 import {ProtobufMessage} from "./message";
 
-export type ClientRpcOptions<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = {
-  host: string,
-  transport?: TransportConstructor,
-  debug?: boolean,
+export interface ClientRpcOptions {
+  host: string;
+  transport?: TransportConstructor;
+  debug?: boolean;
 }
 
 export interface Client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> {
@@ -25,13 +25,13 @@ export interface Client<TRequest extends ProtobufMessage, TResponse extends Prot
   onEnd(callback: (code: Code, message: string, trailers: Metadata) => void): void;
 }
 
-export function client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: ClientRpcOptions<TRequest, TResponse>): Client<TRequest, TResponse> {
+export function client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: ClientRpcOptions): Client<TRequest, TResponse> {
   return new ClientImpl<TRequest, TResponse, M>(methodDescriptor, props);
 }
 
 export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends MethodDefinition<TRequest, TResponse>> {
   methodDefinition: M;
-  props: ClientRpcOptions<TRequest, TResponse>;
+  props: ClientRpcOptions;
 
   started: boolean = false;
   sentFirstMessage: boolean = false;
@@ -49,7 +49,7 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
   responseHeaders: Metadata;
   responseTrailers: Metadata;
 
-  constructor(methodDescriptor: M, props: ClientRpcOptions<TRequest, TResponse>) {
+  constructor(methodDescriptor: M, props: ClientRpcOptions) {
     this.methodDefinition = methodDescriptor;
     this.props = props;
 

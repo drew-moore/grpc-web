@@ -9,27 +9,27 @@ import {ProtobufMessage} from "./message";
 
 export namespace grpc {
   export interface Transport extends impTransport.Transport{}
-  export type TransportOptions = impTransport.TransportOptions;
-  export type TransportConstructor = impTransport.TransportConstructor;
+  export interface TransportOptions extends impTransport.TransportOptions{}
+  export interface TransportConstructor extends impTransport.TransportConstructor{}
   export const DefaultTransportFactory = impTransport.DefaultTransportFactory;
   export const WebsocketTransportFactory = impTransport.WebsocketTransportFactory;
 
-  export type UnaryMethodDefinition<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = impService.UnaryMethodDefinition<TRequest, TResponse>;
-  export type MethodDefinition<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = impService.MethodDefinition<TRequest, TResponse>;
-  export type ServiceDefinition = impService.ServiceDefinition;
+  export interface UnaryMethodDefinition<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> extends impService.UnaryMethodDefinition<TRequest, TResponse>{}
+  export interface MethodDefinition<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> extends impService.MethodDefinition<TRequest, TResponse>{}
+  export interface ServiceDefinition extends impService.ServiceDefinition{}
 
   export import Code = impCode.Code;
   export import Metadata = BrowserHeaders;
 
   export const invoke = impInvoke.invoke;
-  export type Request = impInvoke.Request;
+  export interface Request extends impInvoke.Request{}
 
   export const unary = impUnary.unary;
-  export type UnaryRpcOptions<M extends UnaryMethodDefinition<TRequest, TResponse>, TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = impUnary.UnaryRpcOptions<M, TRequest, TResponse>;
+  export interface UnaryRpcOptions<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> extends impUnary.UnaryRpcOptions<TRequest, TResponse>{}
 
-  export type Client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = impClient.Client<TRequest, TResponse>;
-  export function client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: ClientRpcOptions<TRequest, TResponse>): Client<TRequest, TResponse> {
+  export interface Client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> extends impClient.Client<TRequest, TResponse>{}
+  export function client<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage, M extends MethodDefinition<TRequest, TResponse>>(methodDescriptor: M, props: ClientRpcOptions): Client<TRequest, TResponse> {
     return impClient.client(methodDescriptor, props);
   }
-  export type ClientRpcOptions<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = impClient.ClientRpcOptions<TRequest, TResponse>;
+  export interface ClientRpcOptions extends impClient.ClientRpcOptions{}
 }

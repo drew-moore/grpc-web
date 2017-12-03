@@ -5,19 +5,19 @@ import {Metadata} from "./metadata";
 import {client} from "./client";
 import {ProtobufMessage} from "./message";
 
-export type Request = {
-  close: () => void
+export interface Request {
+  close: () => void;
 }
 
-export type RpcOptions<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = {
-  host: string,
-  request: TRequest,
-  metadata?: Metadata.ConstructorArg,
-  onHeaders?: (headers: Metadata) => void,
-  onMessage?: (res: TResponse) => void,
-  onEnd: (code: Code, message: string, trailers: Metadata) => void,
-  transport?: TransportConstructor,
-  debug?: boolean,
+export interface RpcOptions<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> {
+  host: string;
+  request: TRequest;
+  metadata?: Metadata.ConstructorArg;
+  onHeaders?: (headers: Metadata) => void;
+  onMessage?: (res: TResponse) => void;
+  onEnd: (code: Code, message: string, trailers: Metadata) => void;
+  transport?: TransportConstructor;
+  debug?: boolean;
 }
 
 
