@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 	"io"
 	"net/http"
 	"net/textproto"
 	"strings"
+	"golang.org/x/net/http2"
 )
 
 type WebSocketWrapper struct {
@@ -40,7 +40,7 @@ func (w *WebSocketResponseWriter) Write(b []byte) (int, error) {
 	if !w.writtenHeaders {
 		w.WriteHeader(http.StatusOK)
 	}
-	return w.wsConn.Write(b)
+	return len(b), w.wsConn.WriteMessage(websocket.BinaryMessage, b)
 }
 
 func (w *WebSocketResponseWriter) writeHeaderFrame(headers http.Header) {
@@ -48,8 +48,8 @@ func (w *WebSocketResponseWriter) writeHeaderFrame(headers http.Header) {
 	headers.Write(headerBuffer)
 	headerGrpcDataHeader := []byte{1 << 7, 0, 0, 0, 0} // MSB=1 indicates this is a header data frame.
 	binary.BigEndian.PutUint32(headerGrpcDataHeader[1:5], uint32(headerBuffer.Len()))
-	w.wsConn.Write(headerGrpcDataHeader)
-	w.wsConn.Write(headerBuffer.Bytes())
+	w.wsConn.WriteMessage(websocket.BinaryMessage, headerGrpcDataHeader)
+	w.wsConn.WriteMessage(websocket.BinaryMessage, headerBuffer.Bytes())
 }
 
 func (w *WebSocketResponseWriter) WriteHeader(code int) {
@@ -103,19 +103,19 @@ func (w *WebSocketWrappedReader) Close() error {
 }
 
 func (w *WebSocketWrappedReader) Read(p []byte) (int, error) {
-	n, err := w.wsConn.Read(p)
-	if err == io.EOF {
+	messageType, payload, err := w.wsConn.ReadMessage()
+	if err == io.EOF || messageType == -1 {
 		defer func() {
 			w.respWriter.closeNotifyChan <- true
 		}()
 	}
 
-	// If the Read was for 5 bytes then this is *likely* a read for a frame prefix
-	// If the first byte's second most significant bit is set then this indicates the client has finished sending
-	if len(p) == 5 && p[0] == 64 && p[1] == 0 && p[2] == 0 && p[3] == 0 && p[4] == 0 {
+	if len(payload) == 5 && payload[0] == 64 && payload[1] == 0 && payload[2] == 0 && payload[3] == 0 && payload[4] == 0 {
 		return 0, io.EOF
 	}
-	return n, err
+
+	copy(p, payload)
+	return len(payload), nil
 }
 
 func NewWebsocketWrappedReader(wsConn *websocket.Conn, respWriter *WebSocketResponseWriter) *WebSocketWrappedReader {

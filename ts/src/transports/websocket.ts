@@ -49,7 +49,7 @@ export default function websocketRequest(options: TransportOptions): Transport {
       ws.binaryType = "arraybuffer";
       ws.onopen = function () {
         options.debug && debug("websocketRequest.onopen");
-        ws.send(frameHeaders(metadata));
+        ws.send(headersToBytes(metadata));
 
         // send any messages that were passed to sendMessage before the connection was ready
         sendQueue.forEach(toSend => {
@@ -84,16 +84,10 @@ export default function websocketRequest(options: TransportOptions): Transport {
   };
 }
 
-function frameHeaders(headers: Metadata): Uint8Array {
+function headersToBytes(headers: Metadata): Uint8Array {
   let asString = '';
   headers.forEach((key, values) => {
     asString += `${key}: ${values.join(', ')}\r\n`;
   });
-  const bytes = new TextEncoder().encode(asString);
-  const frame = new ArrayBuffer(bytes.byteLength + 5);
-  const dataview = new DataView(frame, 0, 5);
-  dataview.setUint32(1, bytes.length, false /* big endian */);
-  dataview.setUint8(0, 128);
-  new Uint8Array(frame, 5).set(bytes);
-  return new Uint8Array(frame);
+  return new TextEncoder().encode(asString);
 }

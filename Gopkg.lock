@@ -20,6 +20,12 @@
   revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
 
 [[projects]]
+  name = "github.com/gorilla/websocket"
+  packages = ["."]
+  revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [".","logging","logging/logrus","tags"]
@@ -112,7 +118,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["context","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
+  packages = ["context","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace","websocket"]
   revision = "9dfe39835686865bff950a07b394c12a98ddc811"
 
 [[projects]]
@@ -142,6 +148,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bc0a899b3250e6e8522036e1c4a9756755dd7af78f5d47c1b52343c80deffbbd"
+  inputs-digest = "246b1df49681204feb930efd45ddb826f77585ebcf1ce84cc45446d71ae23a12"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -4,17 +4,15 @@
 package grpcweb
 
 import (
-	"encoding/binary"
 	"net/http"
 
 	"strings"
 	"time"
 
 	"github.com/rs/cors"
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
-	"io"
 	"net/url"
 )
 
@@ -111,37 +109,45 @@ func (w *WrappedGrpcServer) HandleGrpcWebRequest(resp http.ResponseWriter, req *
 	intResp.finishRequest(req)
 }
 
-func (w *WrappedGrpcServer) HandleGrpcWebsocketRequest(resp http.ResponseWriter, req *http.Request) {
-	websocket.Handler(w.handleWebSocket).ServeHTTP(resp, req)
+var websocketUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool { return true },
+	Subprotocols: []string{"grpc-websockets"},
 }
 
-func (w *WrappedGrpcServer) handleWebSocket(wsConn *websocket.Conn) {
-	wsConn.PayloadType = websocket.BinaryFrame
-
-	respWriter := newWebSocketResponseWriter(wsConn)
-
-	var readLengthBuffer [5]byte
-	if _, err := wsConn.Read(readLengthBuffer[:]); err != nil {
+func (w *WrappedGrpcServer) HandleGrpcWebsocketRequest(resp http.ResponseWriter, req *http.Request) {
+	conn, err := websocketUpgrader.Upgrade(resp, req, nil)
+	if err != nil {
+		grpclog.Errorf("Unable to upgrade websocket request: %v", err)
 		return
 	}
 
-	headerLength := binary.BigEndian.Uint32(readLengthBuffer[1:])
-	readBytes := make([]byte, int(headerLength))
-	if _, err := wsConn.Read(readBytes); err != nil {
-		if err == io.EOF {
-			err = io.ErrUnexpectedEOF
-		}
+	w.handleWebSocket(conn, req)
+}
+
+func (w *WrappedGrpcServer) handleWebSocket(wsConn *websocket.Conn, req *http.Request) {
+	respWriter := newWebSocketResponseWriter(wsConn)
+
+	messageType, readBytes, err := wsConn.ReadMessage()
+	if err != nil {
+		grpclog.Errorf("Unable to read first websocket message: %v", err)
+		return
+	}
+
+	if messageType != websocket.BinaryMessage {
+		grpclog.Errorf("First websocket message is non-binary")
 		return
 	}
 
 	headers, err := parseHeaders(string(readBytes))
 	if err != nil {
+		grpclog.Errorf("Unable to parse websocket headers: %v", err)
 		return
 	}
 
 	wrappedReader := NewWebsocketWrappedReader(wsConn, respWriter)
 
-	req := wsConn.Request()
 	req.Body = wrappedReader
 	req.Method = http.MethodPost
 	req.Header = headers
