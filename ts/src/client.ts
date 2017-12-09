@@ -69,7 +69,11 @@ export class ClientImpl<TRequest extends ProtobufMessage, TResponse extends Prot
 
     let transportConstructor = this.props.transport;
     if (transportConstructor) {
-      this.transport = transportConstructor(transportOptions);
+      const constructedTransport = transportConstructor(transportOptions);
+      if (constructedTransport instanceof Error) {
+        throw constructedTransport;
+      }
+      this.transport = constructedTransport;
     } else {
       const factoryTransport = DefaultTransportFactory(transportOptions);
       if (factoryTransport instanceof Error) {

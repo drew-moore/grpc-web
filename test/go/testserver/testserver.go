@@ -137,6 +137,16 @@ func (s *testSrv) Ping(ctx context.Context, ping *testproto.PingRequest) (*testp
 	return &testproto.PingResponse{Value: ping.Value, Counter: 252}, nil
 }
 
+func (s *testSrv) Echo(ctx context.Context, text *testproto.TextMessage) (*testproto.TextMessage, error) {
+	if text.GetSendHeaders() {
+		grpc.SendHeader(ctx, metadata.Pairs("HeaderTestKey1", "ServerValue1", "HeaderTestKey2", "ServerValue2"))
+	}
+	if text.GetSendTrailers() {
+		grpc.SetTrailer(ctx, metadata.Pairs("TrailerTestKey1", "ServerValue1", "TrailerTestKey2", "ServerValue2"))
+	}
+	return text, nil
+}
+
 func (s *testSrv) PingError(ctx context.Context, ping *testproto.PingRequest) (*google_protobuf.Empty, error) {
 	if ping.FailureType == testproto.PingRequest_DROP {
 		t, _ := transport.StreamFromContext(ctx)

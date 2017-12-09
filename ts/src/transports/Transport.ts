@@ -18,7 +18,7 @@ export interface Transport {
 }
 
 export interface TransportConstructor {
-  (options: TransportOptions): Transport;
+  (options: TransportOptions): Transport | Error;
 }
 
 export interface TransportOptions {
@@ -91,6 +91,6 @@ function detectTransport(): TransportConstructor {
   throw new Error("No suitable transport found for gRPC-Web");
 }
 
-export function WebsocketTransportFactory(transportOptions: TransportOptions): Transport {
+export function WebsocketTransportFactory(transportOptions: TransportOptions): Transport | Error {
   return websocketRequest(transportOptions);
 }

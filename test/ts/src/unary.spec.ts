@@ -9,7 +9,7 @@ import {assert} from "chai";
 // Generated Test Classes
 import {
   PingRequest,
-  PingResponse,
+  PingResponse, TextMessage,
 } from "../_proto/improbable/grpcweb/test/test_pb";
 import {FailService, TestService} from "../_proto/improbable/grpcweb/test/test_pb_service";
 import {DEBUG, UncaughtExceptionListener} from "./util";
@@ -77,6 +77,46 @@ describe(`unary`, () => {
               const asPingResponse: PingResponse = message as PingResponse;
               assert.deepEqual(asPingResponse.getValue(), "hello world");
               assert.deepEqual(asPingResponse.getCounter(), 252);
+              if (withTrailers) {
+                assert.deepEqual(trailers.get("TrailerTestKey1"), ["ServerValue1"]);
+                assert.deepEqual(trailers.get("TrailerTestKey2"), ["ServerValue2"]);
+              }
+              done();
+            }
+          });
+        });
+      });
+
+      headerTrailerCombos((withHeaders, withTrailers) => {
+        it(`should make a large unary request`, (done) => {
+          let text = "";
+          const iterations = 1024;
+          for (let i = 0; i < iterations; i++) {
+            text += "0123456789ABCDEF";
+          }
+          assert.equal(text.length, 16384, "generated message length");
+
+          const textMessage = new TextMessage();
+          textMessage.setText(text);
+          textMessage.setSendHeaders(withHeaders);
+          textMessage.setSendTrailers(withTrailers);
+
+          grpc.unary(TestService.Echo, {
+            debug: DEBUG,
+            transport: transport,
+            request: textMessage,
+            host: testHostUrl,
+            onEnd: ({status, statusMessage, headers, message, trailers}) => {
+              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
+              assert.strictEqual(statusMessage, undefined, "expected no message");
+              if (withHeaders) {
+                assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
+                assert.deepEqual(headers.get("HeaderTestKey2"), ["ServerValue2"]);
+              }
+              assert.ok(message instanceof TextMessage);
+              const asTextMessage: TextMessage = message as TextMessage;
+              assert.equal(asTextMessage.getText().length, 16384, "response message length");
               if (withTrailers) {
                 assert.deepEqual(trailers.get("TrailerTestKey1"), ["ServerValue1"]);
                 assert.deepEqual(trailers.get("TrailerTestKey2"), ["ServerValue2"]);

@@ -7,7 +7,7 @@ enum WebsocketSignal {
   FINISH_SEND = 1
 }
 
-const finishSendFrame = new Uint8Array([64, 0, 0, 0, 0]);
+const finishSendFrame = new Uint8Array([1]);
 
 /* websocketRequest uses Websockets and requires the server to enable experimental websocket support */
 export default function websocketRequest(options: TransportOptions): Transport {
@@ -25,7 +25,13 @@ export default function websocketRequest(options: TransportOptions): Transport {
     if (toSend === WebsocketSignal.FINISH_SEND) {
       ws.send(finishSendFrame);
     } else {
-      ws.send(toSend)
+      const byteArray = toSend as ArrayBufferView;
+      const c = new Int8Array(byteArray.byteLength + 1);
+      c.set(new Uint8Array([0]));
+
+      c.set(byteArray as any as ArrayLike<number>, 1);
+
+      ws.send(c)
     }
   }
 
