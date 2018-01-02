@@ -3,7 +3,6 @@ import {
   grpc,
 } from "../../../ts/src/index";
 
-import {debug} from "../../../ts/src/debug";
 import {assert} from "chai";
 
 // Generated Test Classes
@@ -70,16 +69,16 @@ describe("cancellation handling", () => {
       const numMessagesBeforeAbort = 5;
 
       const doAbort = () => {
-        DEBUG && debug("doAbort");
+        DEBUG && console.debug("doAbort");
         reqObj.close();
 
         // To ensure that the transport is successfully closing the connection, poll the server every 1s until
         // it confirms the connection was closed. Connection closure is immediate in some browser/transport combinations,
         // but can take several seconds in others.
         function checkAbort(attempt: number) {
-          DEBUG && debug("checkAbort", attempt);
+          DEBUG && console.debug("checkAbort", attempt);
           continueStream(testHostUrl, streamIdentifier, (status) => {
-            DEBUG && debug("checkAbort.continueStream.status", status);
+            DEBUG && console.debug("checkAbort.continueStream.status", status);
 
             const checkStreamClosedRequest = new CheckStreamClosedRequest();
             checkStreamClosedRequest.setStreamIdentifier(streamIdentifier);
@@ -89,7 +88,7 @@ describe("cancellation handling", () => {
               host: testHostUrl,
               onEnd: ({message}) => {
                 const closed = (message as CheckStreamClosedResponse).getClosed();
-                DEBUG && debug("closed", closed);
+                DEBUG && console.debug("closed", closed);
                 if (closed) {
                   done();
                 } else {
@@ -115,11 +114,11 @@ describe("cancellation handling", () => {
         request: ping,
         host: testHostUrl,
         onHeaders: (headers: grpc.Metadata) => {
-          DEBUG && debug("headers", headers);
+          DEBUG && console.debug("headers", headers);
         },
         onMessage: (message: PingResponse) => {
           assert.ok(message instanceof PingResponse);
-          DEBUG && debug("onMessage.message.getCounter()", message.getCounter());
+          DEBUG && console.debug("onMessage.message.getCounter()", message.getCounter());
           assert.strictEqual(message.getCounter(), onMessageId++);
           if (message.getCounter() === numMessagesBeforeAbort) {
             // Abort after receiving numMessagesBeforeAbort messages
@@ -127,12 +126,12 @@ describe("cancellation handling", () => {
           } else if (message.getCounter() < numMessagesBeforeAbort) {
             // Only request the next message if not yet aborted
             continueStream(testHostUrl, streamIdentifier, (status) => {
-              DEBUG && debug("onMessage.continueStream.status", status);
+              DEBUG && console.debug("onMessage.continueStream.status", status);
             });
           }
         },
         onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-          DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+          DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           // onEnd shouldn't be called if abort is called prior to the response ending
           assert.fail();
         }

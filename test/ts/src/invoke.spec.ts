@@ -3,7 +3,6 @@ import {
   grpc,
 } from "../../../ts/src/index";
 
-import {debug} from "../../../ts/src/debug";
 import {assert} from "chai";
 
 // Generated Test Classes
@@ -33,13 +32,13 @@ describe("invoke", () => {
             request: ping,
             host: testHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
             },
             onMessage: (message: PingResponse) => {
-              DEBUG && debug("message", message);
+              DEBUG && console.debug("message", message);
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage);
             }
           })
         }, ".invoke cannot be used with client-streaming methods. Use .client instead.");
@@ -61,7 +60,7 @@ describe("invoke", () => {
             request: ping,
             host: testHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -75,7 +74,7 @@ describe("invoke", () => {
               assert.deepEqual(message.getCounter(), 252);
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {
@@ -108,7 +107,7 @@ describe("invoke", () => {
             metadata: new grpc.Metadata({"HeaderTestKey1": "ClientValue1"}),
             host: testHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -122,7 +121,7 @@ describe("invoke", () => {
               assert.deepEqual(message.getCounter(), 252);
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {
@@ -154,7 +153,7 @@ describe("invoke", () => {
             request: ping,
             host: testHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -166,7 +165,7 @@ describe("invoke", () => {
               assert.strictEqual(message.getCounter(), onMessageId++);
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {
@@ -201,7 +200,7 @@ describe("invoke", () => {
             request: ping,
             host: testHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -210,13 +209,13 @@ describe("invoke", () => {
             },
             onMessage: (message: PingResponse) => {
               continueStream(testHostUrl, streamIdentifier, (status) => {
-                DEBUG && debug("continueStream.status", status);
+                DEBUG && console.debug("continueStream.status", status);
               });
               assert.ok(message instanceof PingResponse);
               assert.strictEqual(message.getCounter(), onMessageId++);
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {
@@ -248,7 +247,7 @@ describe("invoke", () => {
             request: ping,
             host: testHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -260,7 +259,7 @@ describe("invoke", () => {
               assert.strictEqual(message.getCounter(), onMessageId++);
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {
@@ -292,14 +291,14 @@ describe("invoke", () => {
             request: ping,
             host: testHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
               didGetOnHeaders = true;
             },
             onMessage: (message: Empty) => {
               didGetOnMessage = true;
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
               assert.deepEqual(trailers.get("grpc-status"), ["12"]);
               assert.deepEqual(trailers.get("grpc-message"), ["Intentionally returning error for PingError"]);
               assert.strictEqual(status, grpc.Code.Unimplemented);
@@ -329,14 +328,14 @@ describe("invoke", () => {
             // the same host as the same origin, so this request has to be made to a different host to trigger CORS behaviour.
             host: corsHostUrl,
             onHeaders: (headers: grpc.Metadata) => {
-              DEBUG && debug("headers", headers);
+              DEBUG && console.debug("headers", headers);
               didGetOnHeaders = true;
             },
             onMessage: (message: Empty) => {
               didGetOnMessage = true;
             },
             onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
               // Some browsers return empty Headers for failed requests
               assert.strictEqual(statusMessage, "Response closed without headers");
               assert.strictEqual(status, grpc.Code.Internal);
@@ -360,7 +359,7 @@ describe("invoke", () => {
           request: ping,
           host: testHostUrl,
           onHeaders: (headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
+            DEBUG && console.debug("headers", headers);
             didGetOnHeaders = true;
             assert.deepEqual(headers.get("grpc-status"), []);
             assert.deepEqual(headers.get("grpc-message"), []);
@@ -369,7 +368,7 @@ describe("invoke", () => {
             didGetOnMessage = true;
           },
           onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.strictEqual(statusMessage, "Response closed without grpc-status (Headers only)");
             assert.strictEqual(status, grpc.Code.Internal);
             assert.ok(!didGetOnMessage);
@@ -390,14 +389,14 @@ describe("invoke", () => {
           request: ping,
           host: unavailableHost, // Should not be available
           onHeaders: (headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
+            DEBUG && console.debug("headers", headers);
             didGetOnHeaders = true;
           },
           onMessage: (message: Empty) => {
             didGetOnMessage = true;
           },
           onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.strictEqual(statusMessage, "Response closed without headers");
             assert.strictEqual(status, grpc.Code.Internal);
             assert.ok(!didGetOnMessage);
@@ -418,7 +417,7 @@ describe("invoke", () => {
           request: ping,
           host: emptyHost,
           onHeaders: (headers: grpc.Metadata) => {
-            DEBUG && debug("headers", headers);
+            DEBUG && console.debug("headers", headers);
             didGetOnHeaders = true;
             assert.deepEqual(headers.get("grpc-status"), ["12"]);
             assert.deepEqual(headers.get("grpc-message"), ["unknown service improbable.grpcweb.test.FailService"]);
@@ -427,7 +426,7 @@ describe("invoke", () => {
             didGetOnMessage = true;
           },
           onEnd: (status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.strictEqual(statusMessage, "unknown service improbable.grpcweb.test.FailService");
             assert.strictEqual(status, 12);
             assert.deepEqual(trailers.get("grpc-status"), ["12"]);

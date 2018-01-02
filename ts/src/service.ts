@@ -13,7 +13,7 @@ export interface MethodDefinition<TRequest extends ProtobufMessage, TResponse ex
   responseType: ProtobufMessageClass<TResponse>;
 }
 
-export type UnaryMethodDefinition<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> = MethodDefinition<TRequest, TResponse> & {
+export interface UnaryMethodDefinition<TRequest extends ProtobufMessage, TResponse extends ProtobufMessage> extends MethodDefinition<TRequest, TResponse> {
   requestStream: false;
   responseStream: false;
 }

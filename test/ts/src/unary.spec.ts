@@ -3,7 +3,6 @@ import {
   grpc,
 } from "../../../ts/src/index";
 
-import {debug} from "../../../ts/src/debug";
 import {assert} from "chai";
 
 // Generated Test Classes
@@ -30,7 +29,7 @@ describe(`unary`, () => {
             request: ping,
             host: testHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
             }
           })
         }, ".unary cannot be used with server-streaming methods. Use .invoke or .client instead.");
@@ -47,7 +46,7 @@ describe(`unary`, () => {
             request: ping,
             host: testHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
             }
           })
         }, ".unary cannot be used with client-streaming methods. Use .client instead.");
@@ -66,7 +65,7 @@ describe(`unary`, () => {
             request: ping,
             host: testHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withHeaders) {
@@ -107,7 +106,7 @@ describe(`unary`, () => {
             request: textMessage,
             host: testHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withHeaders) {
@@ -142,7 +141,7 @@ describe(`unary`, () => {
             metadata: new grpc.Metadata({"HeaderTestKey1": "ClientValue1"}),
             host: testHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withHeaders) {
@@ -177,7 +176,7 @@ describe(`unary`, () => {
             request: ping,
             host: testHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
               assert.strictEqual(status, grpc.Code.Unimplemented);
               assert.strictEqual(statusMessage, "Intentionally returning error for PingError");
               if (withHeaders) {
@@ -211,7 +210,7 @@ describe(`unary`, () => {
             // the same host as the same origin, so this request has to be made to a different host to trigger CORS behaviour.
             host: corsHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
               // Some browsers return empty Headers for failed requests
               assert.strictEqual(statusMessage, "Response closed without headers");
               assert.strictEqual(status, grpc.Code.Internal);
@@ -231,7 +230,7 @@ describe(`unary`, () => {
           request: ping,
           host: testHostUrl,
           onEnd: ({status, statusMessage, headers, message, trailers}) => {
-            DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
             assert.strictEqual(statusMessage, "Response closed without grpc-status (Headers only)");
             assert.strictEqual(status, grpc.Code.Internal);
             assert.deepEqual(headers.get("grpc-status"), []);
@@ -251,7 +250,7 @@ describe(`unary`, () => {
           request: ping,
           host: unavailableHost, // Should not be available
           onEnd: ({status, statusMessage, headers, message, trailers}) => {
-            DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
             assert.strictEqual(statusMessage, "Response closed without headers");
             assert.strictEqual(status, grpc.Code.Internal);
             assert.isNull(message);
@@ -269,7 +268,7 @@ describe(`unary`, () => {
           request: ping,
           host: emptyHost,
           onEnd: ({status, statusMessage, headers, message, trailers}) => {
-            DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
             assert.strictEqual(statusMessage, "unknown service improbable.grpcweb.test.FailService");
             assert.strictEqual(status, 12);
             assert.isNull(message);
@@ -303,7 +302,7 @@ describe(`unary`, () => {
             request: ping,
             host: testHostUrl,
             onEnd: ({status, statusMessage, headers, message, trailers}) => {
-              DEBUG && debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
+              DEBUG && console.debug("status", status, "statusMessage", statusMessage, "headers", headers, "res", message, "trailers", trailers);
               setTimeout(() => {
                 uncaughtHandler.detach();
                 const exceptionsCaught = uncaughtHandler.getMessages();
