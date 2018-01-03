@@ -84,10 +84,10 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
   }
 
   onTransportHeaders(headers: Metadata, status: number) {
-    this.props.DEBUG && console.debug("onHeaders", headers, status);
+    this.props.debug && debug("onHeaders", headers, status);
 
     if (this.closed) {
-      this.props.DEBUG && console.debug("grpc.onHeaders received after request was closed - ignoring");
+      this.props.debug && debug("grpc.onHeaders received after request was closed - ignoring");
       return;
     }
 
@@ -95,11 +95,11 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
       // The request has failed due to connectivity issues. Do not capture the headers
     } else {
       this.responseHeaders = headers;
-      this.props.DEBUG && console.debug("onHeaders.responseHeaders", JSON.stringify(this.responseHeaders, null, 2));
+      this.props.debug && debug("onHeaders.responseHeaders", JSON.stringify(this.responseHeaders, null, 2));
       const code = httpStatusToCode(status);
-      this.props.DEBUG && console.debug("onHeaders.code", code);
+      this.props.debug && debug("onHeaders.code", code);
       const gRPCMessage = headers.get("grpc-message") || [];
-      this.props.DEBUG && console.debug("onHeaders.gRPCMessage", gRPCMessage);
+      this.props.debug && debug("onHeaders.gRPCMessage", gRPCMessage);
       if (code !== Code.OK) {
         this.rawOnError(code, gRPCMessage[0]);
         return;
@@ -111,7 +111,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
 
   onTransportChunk(chunkBytes: Uint8Array) {
     if (this.closed) {
-      this.props.DEBUG && console.debug("grpc.onChunk received after request was closed - ignoring");
+      this.props.debug && debug("grpc.onChunk received after request was closed - ignoring");
       return;
     }
 
@@ -119,7 +119,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
     try {
       data = this.parser.parse(chunkBytes);
     } catch (e) {
-      this.props.DEBUG && console.debug("onChunk.parsing error", e, e.message);
+      this.props.debug && debug("onChunk.parsing error", e, e.message);
       this.rawOnError(Code.Internal, `parsing error: ${e.message}`);
       return;
     }
@@ -134,17 +134,17 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
           this.rawOnHeaders(this.responseHeaders);
         } else {
           this.responseTrailers = new Metadata(d.trailers);
-          this.props.DEBUG && console.debug("onChunk.trailers", this.responseTrailers);
+          this.props.debug && debug("onChunk.trailers", this.responseTrailers);
         }
       }
     });
   }
 
   onTransportEnd() {
-    this.props.DEBUG && console.debug("grpc.onEnd");
+    this.props.debug && debug("grpc.onEnd");
 
     if (this.closed) {
-      this.props.DEBUG && console.debug("grpc.onEnd received after request was closed - ignoring");
+      this.props.debug && debug("grpc.onEnd received after request was closed - ignoring");
       return;
     }
 
@@ -159,7 +159,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
       const grpcMessage = this.responseHeaders.get("grpc-message");
 
       // This was a headers/trailers-only response
-      this.props.DEBUG && console.debug("grpc.headers only response ", grpcStatus, grpcMessage);
+      this.props.debug && debug("grpc.headers only response ", grpcStatus, grpcMessage);
 
       if (grpcStatus === null) {
         this.rawOnEnd(Code.Internal, "Response closed without grpc-status (Headers only)", this.responseHeaders);
@@ -183,7 +183,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
   }
 
   rawOnEnd(code: Code, message: string, trailers: Metadata) {
-    this.props.DEBUG && console.debug("rawOnEnd", code, message, trailers);
+    this.props.debug && debug("rawOnEnd", code, message, trailers);
     if (this.completed) return;
     this.completed = true;
 
@@ -195,7 +195,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
   }
 
   rawOnHeaders(headers: Metadata) {
-    this.props.DEBUG && console.debug("rawOnHeaders", headers);
+    this.props.debug && debug("rawOnHeaders", headers);
     if (this.completed) return;
     this.onHeadersCallbacks.forEach(callback => {
       detach(() => {
@@ -205,7 +205,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
   }
 
   rawOnError(code: Code, msg: string) {
-    this.props.DEBUG && console.debug("rawOnError", code, msg);
+    this.props.debug && debug("rawOnError", code, msg);
     if (this.completed) return;
     this.completed = true;
     this.onEndCallbacks.forEach(callback => {
@@ -216,7 +216,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
   }
 
   rawOnMessage(res: TResponse) {
-    this.props.DEBUG && console.debug("rawOnMessage", res.toObject());
+    this.props.debug && debug("rawOnMessage", res.toObject());
     if (this.completed) return;
     this.onMessageCallbacks.forEach(callback => {
       detach(() => {
@@ -289,7 +289,7 @@ class ClientImpl<TRequest extends ProtobufMessage, TResponse extends ProtobufMes
     }
     if (!this.closed) {
       this.closed = true;
-      this.props.DEBUG && console.debug("request.abort aborting request");
+      this.props.debug && debug("request.abort aborting request");
       this.transport.cancel();
     } else {
       throw new Error("Client already closed - cannot .close()");

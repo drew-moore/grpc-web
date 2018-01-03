@@ -433,6 +433,13 @@ func (s *testServiceImpl) PingStream(stream testproto.TestService_PingStreamServ
 	}
 }
 
+func (s *testServiceImpl) Echo(ctx context.Context, text *testproto.TextMessage) (*testproto.TextMessage, error) {
+	grpc.SendHeader(ctx, expectedHeaders)
+	grpclog.Printf("Handling Echo")
+	grpc.SetTrailer(ctx, expectedTrailers)
+	return text, nil
+}
+
 func (s *testServiceImpl) PingPongBidi(stream testproto.TestService_PingPongBidiServer) error {
 	stream.SendHeader(expectedHeaders)
 	stream.SetTrailer(expectedTrailers)

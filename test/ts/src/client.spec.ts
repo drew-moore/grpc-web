@@ -1,6 +1,7 @@
 // gRPC-Web library
 import {grpc} from "../../../ts/src/index";
 
+import {debug} from "../../../ts/src/debug";
 import {assert} from "chai";
 // Generated Test Classes
 import {Empty,} from "google-protobuf/google/protobuf/empty_pb";
@@ -94,7 +95,7 @@ describe(`client`, () => {
             host: testHostUrl,
           });
           client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && console.debug("headers", headers);
+            DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
             if (withHeaders) {
               assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -108,7 +109,7 @@ describe(`client`, () => {
             assert.deepEqual(message.getCounter(), 252);
           });
           client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && console.debug("status", status, "statusMessage", statusMessage);
+            DEBUG && debug("status", status, "statusMessage", statusMessage);
             assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
             assert.strictEqual(statusMessage, undefined, "expected no message");
             if (withTrailers) {
@@ -141,7 +142,7 @@ describe(`client`, () => {
             host: testHostUrl,
           });
           client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && console.debug("headers", headers);
+            DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
             if (withHeaders) {
               assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -155,7 +156,7 @@ describe(`client`, () => {
             assert.deepEqual(message.getCounter(), 252);
           });
           client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
             assert.strictEqual(statusMessage, undefined, "expected no message");
             if (withTrailers) {
@@ -188,7 +189,7 @@ describe(`client`, () => {
             host: testHostUrl,
           });
           client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && console.debug("headers", headers);
+            DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
             if (withHeaders) {
               assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -200,7 +201,7 @@ describe(`client`, () => {
             assert.strictEqual(message.getCounter(), onMessageId++);
           });
           client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
             assert.strictEqual(statusMessage, undefined, "expected no message");
             if (withTrailers) {
@@ -236,7 +237,7 @@ describe(`client`, () => {
             host: testHostUrl,
           });
           client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && console.debug("headers", headers);
+            DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
             if (withHeaders) {
               assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -245,13 +246,13 @@ describe(`client`, () => {
           });
           client.onMessage((message: PingResponse) => {
             continueStream(testHostUrl, streamIdentifier, (status) => {
-              DEBUG && console.debug("continueStream.status", status);
+              DEBUG && debug("continueStream.status", status);
             });
             assert.ok(message instanceof PingResponse);
             assert.strictEqual(message.getCounter(), onMessageId++);
           });
           client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
             assert.strictEqual(statusMessage, undefined, "expected no message");
             if (withTrailers) {
@@ -284,7 +285,7 @@ describe(`client`, () => {
             host: testHostUrl,
           });
           client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && console.debug("headers", headers);
+            DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
             if (withHeaders) {
               assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -296,7 +297,7 @@ describe(`client`, () => {
             assert.strictEqual(message.getCounter(), onMessageId++);
           });
           client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
             assert.strictEqual(statusMessage, undefined, "expected no message");
             if (withTrailers) {
@@ -329,14 +330,14 @@ describe(`client`, () => {
             host: testHostUrl,
           });
           client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && console.debug("headers", headers);
+            DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
           });
           client.onMessage((message: Empty) => {
             didGetOnMessage = true;
           });
           client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             assert.deepEqual(trailers.get("grpc-status"), ["12"]);
             assert.deepEqual(trailers.get("grpc-message"), ["Intentionally returning error for PingError"]);
             assert.strictEqual(status, grpc.Code.Unimplemented);
@@ -367,14 +368,14 @@ describe(`client`, () => {
             host: corsHostUrl,
           });
           client.onHeaders((headers: grpc.Metadata) => {
-            DEBUG && console.debug("headers", headers);
+            DEBUG && debug("headers", headers);
             didGetOnHeaders = true;
           });
           client.onMessage((message: Empty) => {
             didGetOnMessage = true;
           });
           client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-            DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+            DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
             // Some browsers return empty Headers for failed requests
             assert.strictEqual(statusMessage, "Response closed without headers");
             assert.strictEqual(status, grpc.Code.Internal);
@@ -399,7 +400,7 @@ describe(`client`, () => {
           host: testHostUrl,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-          DEBUG && console.debug("headers", headers);
+          DEBUG && debug("headers", headers);
           didGetOnHeaders = true;
           assert.deepEqual(headers.get("grpc-status"), []);
           assert.deepEqual(headers.get("grpc-message"), []);
@@ -408,7 +409,7 @@ describe(`client`, () => {
           didGetOnMessage = true;
         });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-          DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+          DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.strictEqual(statusMessage, "Response closed without grpc-status (Headers only)");
           assert.strictEqual(status, grpc.Code.Internal);
           assert.ok(!didGetOnMessage);
@@ -430,14 +431,14 @@ describe(`client`, () => {
           host: unavailableHost, // Should not be available
         });
         client.onHeaders((headers: grpc.Metadata) => {
-          DEBUG && console.debug("headers", headers);
+          DEBUG && debug("headers", headers);
           didGetOnHeaders = true;
         });
         client.onMessage((message: Empty) => {
           didGetOnMessage = true;
         });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-          DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+          DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.strictEqual(statusMessage, "Response closed without headers");
           assert.strictEqual(status, grpc.Code.Internal);
           assert.ok(!didGetOnMessage);
@@ -459,7 +460,7 @@ describe(`client`, () => {
           host: emptyHost,
         });
         client.onHeaders((headers: grpc.Metadata) => {
-          DEBUG && console.debug("headers", headers);
+          DEBUG && debug("headers", headers);
           didGetOnHeaders = true;
           assert.deepEqual(headers.get("grpc-status"), ["12"]);
           assert.deepEqual(headers.get("grpc-message"), ["unknown service improbable.grpcweb.test.FailService"]);
@@ -468,7 +469,7 @@ describe(`client`, () => {
           didGetOnMessage = true;
         });
         client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-          DEBUG && console.debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
+          DEBUG && debug("status", status, "statusMessage", statusMessage, "trailers", trailers);
           assert.strictEqual(statusMessage, "unknown service improbable.grpcweb.test.FailService");
           assert.strictEqual(status, 12);
           assert.deepEqual(trailers.get("grpc-status"), ["12"]);
@@ -537,7 +538,7 @@ describe(`client`, () => {
               transport: grpc.WebsocketTransportFactory,
             });
             client.onHeaders((headers: grpc.Metadata) => {
-              DEBUG && console.debug("headers", headers);
+              DEBUG && debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -550,7 +551,7 @@ describe(`client`, () => {
               didGetMessage = true;
             });
             client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && console.debug("status", status, "statusMessage", statusMessage);
+              DEBUG && debug("status", status, "statusMessage", statusMessage);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {
@@ -595,7 +596,7 @@ describe(`client`, () => {
               transport: grpc.WebsocketTransportFactory,
             });
             client.onHeaders((headers: grpc.Metadata) => {
-              DEBUG && console.debug("headers", headers);
+              DEBUG && debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -617,7 +618,7 @@ describe(`client`, () => {
               }
             });
             client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && console.debug("status", status, "statusMessage", statusMessage);
+              DEBUG && debug("status", status, "statusMessage", statusMessage);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {
@@ -654,7 +655,7 @@ describe(`client`, () => {
               transport: grpc.WebsocketTransportFactory,
             });
             client.onHeaders((headers: grpc.Metadata) => {
-              DEBUG && console.debug("headers", headers);
+              DEBUG && debug("headers", headers);
               didGetOnHeaders = true;
               if (withHeaders) {
                 assert.deepEqual(headers.get("HeaderTestKey1"), ["ServerValue1"]);
@@ -679,7 +680,7 @@ describe(`client`, () => {
               }
             });
             client.onEnd((status: grpc.Code, statusMessage: string, trailers: grpc.Metadata) => {
-              DEBUG && console.debug("status", status, "statusMessage", statusMessage);
+              DEBUG && debug("status", status, "statusMessage", statusMessage);
               assert.strictEqual(status, grpc.Code.OK, "expected OK (0)");
               assert.strictEqual(statusMessage, undefined, "expected no message");
               if (withTrailers) {

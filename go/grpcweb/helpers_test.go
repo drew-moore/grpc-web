@@ -22,6 +22,7 @@ func TestListGRPCResources(t *testing.T) {
 		"/improbable.grpcweb.test.TestService/Ping",
 		"/improbable.grpcweb.test.TestService/PingError",
 		"/improbable.grpcweb.test.TestService/PingList",
+		"/improbable.grpcweb.test.TestService/Echo",
 		"/improbable.grpcweb.test.TestService/PingPongBidi",
 		"/improbable.grpcweb.test.TestService/PingStream",
 	}
