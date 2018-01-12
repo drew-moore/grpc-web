@@ -2,6 +2,9 @@ import {Metadata} from "../metadata";
 import {Transport, TransportOptions} from "./Transport";
 import {debug} from "../debug";
 import detach from "../detach";
+import * as TextEncoding from "text-encoding-utf-8";
+
+const global = Function('return this')();
 
 enum WebsocketSignal {
   FINISH_SEND = 1
@@ -95,5 +98,6 @@ function headersToBytes(headers: Metadata): Uint8Array {
   headers.forEach((key, values) => {
     asString += `${key}: ${values.join(', ')}\r\n`;
   });
-  return new TextEncoder().encode(asString);
+  const encoder = global.TextEncoder !== undefined ? global.TextEncoder : TextEncoding.TextEncoder;
+  return new encoder().encode(asString);
 }

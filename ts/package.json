@@ -30,9 +30,9 @@
     "google-protobuf": "^3.2.0"
   },
   "dependencies": {
-    "@types/text-encoding": "0.0.30",
+    "@types/text-encoding-utf-8": "^1.0.1",
     "browser-headers": "^0.4.0",
-    "text-encoding": "^0.6.4"
+    "text-encoding-utf-8": "^1.0.2"
   },
   "devDependencies": {
     "@types/google-protobuf": "^3.2.5",

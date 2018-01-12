@@ -1,5 +1,5 @@
 import {Metadata} from "./metadata";
-import * as TextEncoding from "text-encoding";
+import * as TextEncoding from "text-encoding-utf-8";
 
 const HEADER_SIZE = 5;
 
