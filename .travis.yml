@@ -39,7 +39,10 @@ install:
   - go get github.com/golang/protobuf/protoc-gen-go
   - dep ensure
   - export PATH=/home/travis/gopath/src/github.com/improbable-eng/grpc-web/protobuf/bin:$PATH
-  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm
+  - (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`)
+  - source ~/.nvm/nvm.sh
+  - nvm install
   - npm install
 before_script:
   - ./test/start-testserver.sh &
