@@ -6,11 +6,10 @@ if [ "$GLOBAL_TESTSERVER" = true ] ; then
   echo "Not starting testserver as GLOBAL_TESTSERVER is set"
 else
   function killGoTestServer {
-    echo "Killing Go Test server..."
+    echo "Killing start-testserver..."
     kill ${SERVER_PID} &> /dev/null
   }
 
-  echo "Starting Go Test server..."
   ./start-testserver.sh &
   SERVER_PID=$!
 
