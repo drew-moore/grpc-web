@@ -17,7 +17,7 @@ else
   sleep 0.5
   ps ${SERVER_PID} &> /dev/null
 
-  # Kill the Go Test server when this script exists or is interrupted.
+  # Kill the Go Test server when this script exits or is interrupted.
   trap killGoTestServer SIGINT
   trap killGoTestServer EXIT
 fi
