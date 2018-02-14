@@ -17,7 +17,7 @@ export default function websocketRequest(options: TransportOptions): Transport {
   let httpAddress = `${options.url}`;
   httpAddress = httpAddress.substr(8);
 
-  const webSocketAddress = `wss://${httpAddress}`;
+  const webSocketAddress = `ws://${httpAddress}`;
 
   const sendQueue: Array<ArrayBufferView | WebsocketSignal> = [];
   let ws: WebSocket;
